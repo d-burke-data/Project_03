@@ -84,4 +84,30 @@ CREATE TABLE IF NOT EXISTS events (
 );
 '''
 
+# execute create statements
+conn.execute(create_states_table)
+conn.execute(create_counties_table)
+conn.execute(create_scales_table)
+conn.execute(create_events_table)
 
+
+# --------------------------
+# add csv data to tables
+# --------------------------
+
+# read csv data
+states_df = pd.read_csv('../../Data/state_table.csv')
+counties_df = pd.read_csv('../../Data/county_table.csv')
+#scales_df = pd.read_csv('')
+#events_df = pd.read_csv('')
+
+# append data to existing tables
+states_df.to_sql('states', conn, if_exists='append', index=False)
+counties_df.to_sql('counties', conn, if_exits='append', index=False)
+#scales_df.to_sql('scales', conn, if_exists='append', index=False)
+#counties_df.to_sql('counties', conn, if_exits='append', index=False)
+
+# --------------------------
+# close connection
+# --------------------------
+conn.close()
