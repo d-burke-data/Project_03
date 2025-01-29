@@ -1,3 +1,8 @@
+# Source CSV data files (too big to push)
+Work/David/Data/Details/
+Work/David/Data/Fatalities/
+Work/David/Data/Locations/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
