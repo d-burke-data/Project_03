@@ -35,7 +35,7 @@ CREATE TABLE counties (
 '''
 
 create_scales_table = '''
-CREATE TABLE IF NOT EXISTS scales (
+CREATE TABLE scales (
     F_SCALE     TEXT PRIMARY KEY,
     FUJITA      TEXT NOT NULL,
     DAMAGE      DAMAGE NOT NULL 
@@ -43,22 +43,22 @@ CREATE TABLE IF NOT EXISTS scales (
 '''
 
 create_events_table = '''
-CREATE TABLE IF NOT EXISTS events (
+CREATE TABLE events (
     EVENT_ID            INTEGER PRIMARY KEY,
-    -- TORNADO_ID          INTEGER NOT NULL,
-    BEGIN_TIME          DATE NOT NULL,
-    END_TIME            DATE NOT NULL,
-    CZ_FIPS             TEXT NOT NULL,
-    WFO                 TEXT NOT NULL,
-    INJURIES            INTEGER NOT NULL,
+    FIPS                TEXT NOT NULL,
+    BEGIN_TIMESTAMP     DATE NOT NULL,
+    END_TIMESTAMP       DATE NOT NULL,
+    -- WFO                 TEXT NOT NULL,
     DEATHS              INTEGER NOT NULL,
+    INJURIES            INTEGER NOT NULL,
     DAMAGE_PROPERTY     INTEGER NOT NULL,
     DAMAGE_CROPS        INTEGER NOT NULL,
     TOR_F_SCALE         TEXT NOT NULL,
-    TOR_LENGTH          NUMERIC NOT NULL,
-    TOR_WIDTH           INTEGER NOT NULL,
-    TOR_OTHER_WFO       TEXT,
-    TOR_OTHER_CZ_FIPS   TEXT,
+    TOR_F_LEVEL         TEXT NOT NULL,
+    TOR_LENGTH          NUMERIC,
+    TOR_WIDTH           INTEGER,
+    -- TOR_OTHER_WFO       TEXT,
+    -- TOR_OTHER_CZ_FIPS   TEXT,
     
     -- may remove/update
     BEGIN_RANGE         INTEGER,
@@ -68,21 +68,23 @@ CREATE TABLE IF NOT EXISTS events (
     END_AZIMUTH         TEXT,
     END_LOCATION        TEXT,
 
-    BEGIN_LAT           NUMERIC NOT NULL,
-    BEGIN_LON           NUMERIC NOT NULL,
-    END_LAT             NUMERIC NOT NULL,
-    END_LON             NUMERIC NOT NULL,
-    EVENT_NARRATIVE     TEXT NOT NULL,
+    BEGIN_LAT           NUMERIC,
+    BEGIN_LON           NUMERIC,
+    END_LAT             NUMERIC,
+    END_LON             NUMERIC,
+    EVENT_NARRATIVE     TEXT,
+
+    -- to be removed
+    TORNADO_ID          INTEGER NOT NULL,
 
     -- foreign keys
-    FOREIGN KEY(CZ_FIPS) REFERENCES counties(FIPS),
-    FOREIGN KEY(TOR_F_SCALE) REFERENCES scales(tor_f_scale),
-    FOREIGN KEY(TOR_OTHER_CZ_FIPS) REFERENCES counties(FIPS)
+    FOREIGN KEY(FIPS) REFERENCES counties(FIPS),
+    FOREIGN KEY(TOR_F_LEVEL) REFERENCES scales(F_SCALE)
+    -- FOREIGN KEY(TOR_OTHER_CZ_FIPS) REFERENCES counties(FIPS)
 );
 '''
 
 # execute create statements
-# conn.execute(create_states_table)
 conn.execute(create_counties_table)
 conn.execute(create_scales_table)
 conn.execute(create_events_table)
@@ -93,16 +95,14 @@ conn.execute(create_events_table)
 # --------------------------
 
 # read csv data
-#states_df = pd.read_csv('../../Data/state_table.csv')
 counties_df = pd.read_csv('../../Data/fips_data.csv', dtype={'FIPS': str})  #force fips to be read as string
 scales_df = pd.read_csv('../../Data/f_scales.csv')
-#events_df = pd.read_csv('', dtype={'CZ_FIPS': str, 'TOR_OTHER_CZ_FIPS': str})
+events_df = pd.read_csv('../../Data/Temp_Tornadoes_1950_2024.csv', dtype={'FIPS': str})  #force fips to be read as string
 
 # append data to existing tables
-#states_df.to_sql('states', conn, if_exists='append', index=False)
 counties_df.to_sql('counties', conn, if_exists='append', index=False)
 scales_df.to_sql('scales', conn, if_exists='append', index=False)
-#events_df.to_sql('events', conn, if_exists='append', index=False)
+events_df.to_sql('events', conn, if_exists='append', index=False)
 
 # --------------------------
 # close connection
