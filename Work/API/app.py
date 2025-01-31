@@ -6,9 +6,6 @@ from sqlalchemy import create_engine, func
 
 from flask import Flask, request, jsonify
 
-import datetime as dt
-import numpy as np
-
 # ----------------------------
 # Database Setup
 # ----------------------------
@@ -39,27 +36,47 @@ app = Flask(__name__)
 def welcome():
     return('Welcome to Tornadoes API')
 
-# query events by year
+# query events by year (optional: state or county)
 @app.route('/api/v1.0/tornadoes', methods=['GET'])
 def get_events():
+    
+    # endpoint example:/api/v1.0/tornadoes?start_year=2020&duration=1&state=AL&fip=01234
+    '''
+    Required: 
+        ?start_year = YYYY
+        ?duration = # (number of years)
+    Optional:
+        ?state = state abbreviation
+        ?fip = county_fip
+    '''
 
-    # endpoint example /api/v1.0/tornadoes?start_year=2020&duration=1
+    # request endpoints
     start_year = request.args.get('start_year', type=int)
     duration = request.args.get('duration', type=int)
-    
+    state = request.args.get('state', None, type=str)  #optional
+    county = request.args.get('fip', None, type=str)   #optional
+
     # create session to db
     session = Session(engine)
 
     # query for year and get all columns (events + counties tables)
-    results = (
+    query = (
         session.query(Events, Counties)
         .join(Counties, Events.FIPS == Counties.FIPS)
         .filter(
             func.strftime('%Y', Events.BEGIN_TIMESTAMP, 'unixepoch') >= str(start_year),
             func.strftime('%Y', Events.BEGIN_TIMESTAMP, 'unixepoch') <= str(start_year + duration - 1)
         )
-        .all()
     )
+
+    # check for location endpoints
+    if state:
+        query = query.filter(Counties.STATE == state)
+    if county:
+        query = query.filter(Counties.FIPS == county)
+
+    # execute query
+    results = query.all()
 
     # close session
     session.close()
