@@ -75,7 +75,7 @@ CREATE TABLE events (
     -- EVENT_NARRATIVE     TEXT,
 
     -- to be removed
-    TORNADO_ID          INTEGER NOT NULL,
+    -- TORNADO_ID          INTEGER NOT NULL,
 
     -- foreign keys
     FOREIGN KEY(FIPS) REFERENCES counties(FIPS),
