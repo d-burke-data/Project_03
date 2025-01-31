@@ -80,7 +80,6 @@ CREATE TABLE events (
     -- foreign keys
     FOREIGN KEY(FIPS) REFERENCES counties(FIPS),
     FOREIGN KEY(TOR_F_LEVEL) REFERENCES scales(F_SCALE)
-    -- FOREIGN KEY(TOR_OTHER_CZ_FIPS) REFERENCES counties(FIPS)
 );
 '''
 
