@@ -38,7 +38,7 @@ create_scales_table = '''
 CREATE TABLE scales (
     F_SCALE     TEXT PRIMARY KEY,
     FUJITA      TEXT NOT NULL,
-    DAMAGE      DAMAGE NOT NULL 
+    DAMAGE      TEXT NOT NULL 
 );
 '''
 
