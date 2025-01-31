@@ -176,3 +176,9 @@ cython_debug/
 
 # extra: ignore macOS .DS_Store files
 .DS_Store
+
+# extra: ignore Windows thumbnail cache files
+Thumbs.db
+
+# extra: ignore Visual Studio Code settings folder
+.vscode/
