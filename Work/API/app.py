@@ -37,10 +37,10 @@ def welcome():
     return('Welcome to Tornadoes API')
 
 # query events by year (optional: state or county)
-@app.route('/api/v1.0/tornadoes', methods=['GET'])
+@app.route('/api/v1.0/events', methods=['GET'])
 def get_events():
     
-    # endpoint example:/api/v1.0/tornadoes?start_year=2020&duration=1&state=AL&fip=01234
+    # endpoint example:/api/v1.0/events?start_year=2020&duration=1&state=AL&fip=01234
     '''
     Required: 
         ?start_year = YYYY
@@ -98,8 +98,63 @@ def get_events():
     # return jsonify
     return jsonify(events_info)
 
+# query for scales table data
+@app.route('/api/v1.0/scales')
+def get_scales():
+    
+    # create session to db
+    session = Session(engine)
 
+    # setup query
+    results = (session.query(
+        Scales.F_SCALE,
+        Scales.FUJITA,
+        Scales.DAMAGE
+    ).all())
 
+    # close session
+    session.close()
+
+    # convert result into list of dictionaries
+    scales_info = []
+    for scale, fujita, damage in results:
+        scales_info.append({
+            'F_SCALE': scale,
+            'FUJITA': fujita,
+            'DAMAGE': damage
+        })
+
+    # return jsonified data
+    return jsonify(scales_info)
+
+# query for counties table data
+@app.route('/api/v1.0/counties')
+def get_counties():
+    
+    # create session to db
+    session = Session(engine)
+
+    # setup query
+    results = (session.query(
+        Counties.FIPS,
+        Counties.COUNTYNAME,
+        Counties.STATE
+    ).all())
+
+    # close session
+    session.close()
+
+    # convert result into list of dictionaries
+    counties_info = []
+    for fip, name, state in results:
+        counties_info.append({
+            'FIPS': fip,
+            'COUNTYNAME': name,
+            'STATE': state
+        })
+
+    # return jsonified data
+    return jsonify(counties_info)
 
 # run local server with the app
 if __name__ == '__main__':
