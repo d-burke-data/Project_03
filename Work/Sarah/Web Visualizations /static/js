@@ -33,5 +33,9 @@ function createMap(Heat_layer) {
   }).addTo(map);
 }
 
-function createMarkers(response) {
-    
+function createMarkers() {
+    let URL = "/Users/sarah/Desktop/Project_03/Work/Sarah/Web Visualizations /static/Tornadoes_1950_2024.json";
+
+    d3.json(URL).then(response => {
+        console.log(response)
+        let heatData = []; 
