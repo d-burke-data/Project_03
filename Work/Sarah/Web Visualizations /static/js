@@ -1,0 +1,37 @@
+function createMap(Heat_layer) {
+
+    // Create the tile layer that will be the background of our map.
+    let streetmap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    });
+   
+    let topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+    });
+
+    // Create a baseMaps object to hold the streetmap layer.
+    let baseMaps = {
+      "Street Map": streetmap
+      "Topographic": topo
+    };
+  
+    // Create an overlays object to hold the heat_layer.
+    let overlays = {
+      "Heatmap": Heat_layer
+    };
+
+  // Create the map object with options.
+    let map = L.map("map", {
+    center: [40.73, -74.0059],
+    zoom: 12,
+    layers: [streetmap, Heat_layer]
+  });
+
+  // Create a layer control, and pass it baseMaps and overlays. Add the layer control to the map.
+  L.control.layers(baseMaps, overlays, {
+    collapsed: false
+  }).addTo(map);
+}
+
+function createMarkers(response) {
+    
