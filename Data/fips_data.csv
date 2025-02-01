@@ -1,4 +1,5 @@
 FIPS,COUNTYNAME,STATE
+01000,unidentified county,AL
 01001,Autauga County,AL
 01003,Baldwin County,AL
 01005,Barbour County,AL
@@ -66,6 +67,7 @@ FIPS,COUNTYNAME,STATE
 01129,Washington County,AL
 01131,Wilcox County,AL
 01133,Winston County,AL
+02000,unidentified county,AK
 02013,Aleutians East Borough,AK
 02016,Aleutians West Census Area,AK
 02020,Anchorage Municipality,AK
@@ -77,15 +79,18 @@ FIPS,COUNTYNAME,STATE
 02070,Dillingham Census Area,AK
 02090,Fairbanks North Star Borough,AK
 02100,Haines Borough,AK
+02101,Anchorage Municipality to Bird Creek,AK
 02105,Hoonah-Angoon Census Area,AK
 02110,Juneau City and Borough,AK
 02122,Kenai Peninsula Borough,AK
 02130,Ketchikan Gateway Borough,AK
 02150,Kodiak Island Borough,AK
+02155,Kuskokwim Delta,AK
 02158,Kusilvak Census Area,AK
 02164,Lake and Peninsula Borough,AK
 02170,Matanuska-Susitna Borough,AK
 02180,Nome Census Area,AK
+02181,Alaska Peninsula,AK
 02185,North Slope Borough,AK
 02188,Northwest Arctic Borough,AK
 02195,Petersburg Borough,AK
@@ -96,6 +101,7 @@ FIPS,COUNTYNAME,STATE
 02275,Wrangell City and Borough,AK
 02282,Yakutat City and Borough,AK
 02290,Yukon-Koyukuk Census Area,AK
+04000,unidentified county,AZ
 04001,Apache County,AZ
 04003,Cochise County,AZ
 04005,Coconino County,AZ
@@ -111,6 +117,7 @@ FIPS,COUNTYNAME,STATE
 04023,Santa Cruz County,AZ
 04025,Yavapai County,AZ
 04027,Yuma County,AZ
+05000,unidentified county,AR
 05001,Arkansas County,AR
 05003,Ashley County,AR
 05005,Baxter County,AR
@@ -186,6 +193,7 @@ FIPS,COUNTYNAME,STATE
 05145,White County,AR
 05147,Woodruff County,AR
 05149,Yell County,AR
+06000,unidentified county,CA
 06001,Alameda County,CA
 06003,Alpine County,CA
 06005,Amador County,CA
@@ -244,6 +252,7 @@ FIPS,COUNTYNAME,STATE
 06111,Ventura County,CA
 06113,Yolo County,CA
 06115,Yuba County,CA
+08000,unidentified county,CO
 08001,Adams County,CO
 08003,Alamosa County,CO
 08005,Arapahoe County,CO
@@ -308,6 +317,7 @@ FIPS,COUNTYNAME,STATE
 08121,Washington County,CO
 08123,Weld County,CO
 08125,Yuma County,CO
+09000,unidentified county,CT
 09001,Fairfield County,CT
 09003,Hartford County,CT
 09005,Litchfield County,CT
@@ -316,10 +326,13 @@ FIPS,COUNTYNAME,STATE
 09011,New London County,CT
 09013,Tolland County,CT
 09015,Windham County,CT
+10000,unidentified county,DE
 10001,Kent County,DE
 10003,New Castle County,DE
 10005,Sussex County,DE
+11000,unidentified county,DC
 11001,District of Columbia,DC
+12000,unidentified county,FL
 12001,Alachua County,FL
 12003,Baker County,FL
 12005,Bay County,FL
@@ -387,6 +400,7 @@ FIPS,COUNTYNAME,STATE
 12129,Wakulla County,FL
 12131,Walton County,FL
 12133,Washington County,FL
+13000,unidentified county,GA
 13001,Appling County,GA
 13003,Atkinson County,GA
 13005,Bacon County,GA
@@ -546,11 +560,13 @@ FIPS,COUNTYNAME,STATE
 13317,Wilkes County,GA
 13319,Wilkinson County,GA
 13321,Worth County,GA
+15000,unidentified county,HI
 15001,Hawaii County,HI
 15003,Honolulu County,HI
 15005,Kalawao County,HI
 15007,Kauai County,HI
 15009,Maui County,HI
+16000,unidentified county,ID
 16001,Ada County,ID
 16003,Adams County,ID
 16005,Bannock County,ID
@@ -595,6 +611,7 @@ FIPS,COUNTYNAME,STATE
 16083,Twin Falls County,ID
 16085,Valley County,ID
 16087,Washington County,ID
+17000,unidentified county,IL
 17001,Adams County,IL
 17003,Alexander County,IL
 17005,Bond County,IL
@@ -697,6 +714,7 @@ FIPS,COUNTYNAME,STATE
 17199,Williamson County,IL
 17201,Winnebago County,IL
 17203,Woodford County,IL
+18000,unidentified county,IN
 18001,Adams County,IN
 18003,Allen County,IN
 18005,Bartholomew County,IN
@@ -789,6 +807,7 @@ FIPS,COUNTYNAME,STATE
 18179,Wells County,IN
 18181,White County,IN
 18183,Whitley County,IN
+19000,unidentified county,IA
 19001,Adair County,IA
 19003,Adams County,IA
 19005,Allamakee County,IA
@@ -888,6 +907,7 @@ FIPS,COUNTYNAME,STATE
 19193,Woodbury County,IA
 19195,Worth County,IA
 19197,Wright County,IA
+20000,unidentified county,KS
 20001,Allen County,KS
 20003,Anderson County,KS
 20005,Atchison County,KS
@@ -993,6 +1013,7 @@ FIPS,COUNTYNAME,STATE
 20205,Wilson County,KS
 20207,Woodson County,KS
 20209,Wyandotte County,KS
+21000,unidentified county,KY
 21001,Adair County,KY
 21003,Allen County,KY
 21005,Anderson County,KY
@@ -1113,6 +1134,7 @@ FIPS,COUNTYNAME,STATE
 21235,Whitley County,KY
 21237,Wolfe County,KY
 21239,Woodford County,KY
+22000,unidentified county,LA
 22001,Acadia Parish,LA
 22003,Allen Parish,LA
 22005,Ascension Parish,LA
@@ -1177,6 +1199,7 @@ FIPS,COUNTYNAME,STATE
 22123,West Carroll Parish,LA
 22125,West Feliciana Parish,LA
 22127,Winn Parish,LA
+23000,unidentified county,ME
 23001,Androscoggin County,ME
 23003,Aroostook County,ME
 23005,Cumberland County,ME
@@ -1193,6 +1216,7 @@ FIPS,COUNTYNAME,STATE
 23027,Waldo County,ME
 23029,Washington County,ME
 23031,York County,ME
+24000,unidentified county,MD
 24001,Allegany County,MD
 24003,Anne Arundel County,MD
 24005,Baltimore County,MD
@@ -1217,6 +1241,7 @@ FIPS,COUNTYNAME,STATE
 24045,Wicomico County,MD
 24047,Worcester County,MD
 24510,Baltimore city,MD
+25000,unidentified county,MA
 25001,Barnstable County,MA
 25003,Berkshire County,MA
 25005,Bristol County,MA
@@ -1231,6 +1256,7 @@ FIPS,COUNTYNAME,STATE
 25023,Plymouth County,MA
 25025,Suffolk County,MA
 25027,Worcester County,MA
+26000,unidentified county,MI
 26001,Alcona County,MI
 26003,Alger County,MI
 26005,Allegan County,MI
@@ -1314,6 +1340,7 @@ FIPS,COUNTYNAME,STATE
 26161,Washtenaw County,MI
 26163,Wayne County,MI
 26165,Wexford County,MI
+27000,unidentified county,MN
 27001,Aitkin County,MN
 27003,Anoka County,MN
 27005,Becker County,MN
@@ -1401,6 +1428,7 @@ FIPS,COUNTYNAME,STATE
 27169,Winona County,MN
 27171,Wright County,MN
 27173,Yellow Medicine County,MN
+28000,unidentified county,MS
 28001,Adams County,MS
 28003,Alcorn County,MS
 28005,Amite County,MS
@@ -1483,6 +1511,7 @@ FIPS,COUNTYNAME,STATE
 28159,Winston County,MS
 28161,Yalobusha County,MS
 28163,Yazoo County,MS
+29000,unidentified county,MO
 29001,Adair County,MO
 29003,Andrew County,MO
 29005,Atchison County,MO
@@ -1598,6 +1627,7 @@ FIPS,COUNTYNAME,STATE
 29227,Worth County,MO
 29229,Wright County,MO
 29510,St. Louis city,MO
+30000,unidentified county,MT
 30001,Beaverhead County,MT
 30003,Big Horn County,MT
 30005,Blaine County,MT
@@ -1654,6 +1684,7 @@ FIPS,COUNTYNAME,STATE
 30107,Wheatland County,MT
 30109,Wibaux County,MT
 30111,Yellowstone County,MT
+31000,unidentified county,NE
 31001,Adams County,NE
 31003,Antelope County,NE
 31005,Arthur County,NE
@@ -1747,6 +1778,7 @@ FIPS,COUNTYNAME,STATE
 31181,Webster County,NE
 31183,Wheeler County,NE
 31185,York County,NE
+32000,unidentified county,NV
 32001,Churchill County,NV
 32003,Clark County,NV
 32005,Douglas County,NV
@@ -1764,6 +1796,7 @@ FIPS,COUNTYNAME,STATE
 32031,Washoe County,NV
 32033,White Pine County,NV
 32510,Carson City,NV
+33000,unidentified county,NH
 33001,Belknap County,NH
 33003,Carroll County,NH
 33005,Cheshire County,NH
@@ -1774,6 +1807,7 @@ FIPS,COUNTYNAME,STATE
 33015,Rockingham County,NH
 33017,Strafford County,NH
 33019,Sullivan County,NH
+34000,unidentified county,NJ
 34001,Atlantic County,NJ
 34003,Bergen County,NJ
 34005,Burlington County,NJ
@@ -1795,6 +1829,7 @@ FIPS,COUNTYNAME,STATE
 34037,Sussex County,NJ
 34039,Union County,NJ
 34041,Warren County,NJ
+35000,unidentified county,NM
 35001,Bernalillo County,NM
 35003,Catron County,NM
 35005,Chaves County,NM
@@ -1828,6 +1863,7 @@ FIPS,COUNTYNAME,STATE
 35057,Torrance County,NM
 35059,Union County,NM
 35061,Valencia County,NM
+36000,unidentified county,NY
 36001,Albany County,NY
 36003,Allegany County,NY
 36005,Bronx County,NY
@@ -1890,6 +1926,7 @@ FIPS,COUNTYNAME,STATE
 36119,Westchester County,NY
 36121,Wyoming County,NY
 36123,Yates County,NY
+37000,unidentified county,NC
 37001,Alamance County,NC
 37003,Alexander County,NC
 37005,Alleghany County,NC
@@ -1990,6 +2027,7 @@ FIPS,COUNTYNAME,STATE
 37195,Wilson County,NC
 37197,Yadkin County,NC
 37199,Yancey County,NC
+38000,unidentified county,ND
 38001,Adams County,ND
 38003,Barnes County,ND
 38005,Benson County,ND
@@ -2043,6 +2081,7 @@ FIPS,COUNTYNAME,STATE
 38101,Ward County,ND
 38103,Wells County,ND
 38105,Williams County,ND
+39000,unidentified county,OH
 39001,Adams County,OH
 39003,Allen County,OH
 39005,Ashland County,OH
@@ -2131,6 +2170,7 @@ FIPS,COUNTYNAME,STATE
 39171,Williams County,OH
 39173,Wood County,OH
 39175,Wyandot County,OH
+40000,unidentified county,OK
 40001,Adair County,OK
 40003,Alfalfa County,OK
 40005,Atoka County,OK
@@ -2208,6 +2248,7 @@ FIPS,COUNTYNAME,STATE
 40149,Washita County,OK
 40151,Woods County,OK
 40153,Woodward County,OK
+41000,unidentified county,OR
 41001,Baker County,OR
 41003,Benton County,OR
 41005,Clackamas County,OR
@@ -2244,6 +2285,7 @@ FIPS,COUNTYNAME,STATE
 41067,Washington County,OR
 41069,Wheeler County,OR
 41071,Yamhill County,OR
+42000,unidentified county,PA
 42001,Adams County,PA
 42003,Allegheny County,PA
 42005,Armstrong County,PA
@@ -2311,11 +2353,13 @@ FIPS,COUNTYNAME,STATE
 42129,Westmoreland County,PA
 42131,Wyoming County,PA
 42133,York County,PA
+44000,unidentified county,RI
 44001,Bristol County,RI
 44003,Kent County,RI
 44005,Newport County,RI
 44007,Providence County,RI
 44009,Washington County,RI
+45000,unidentified county,SC
 45001,Abbeville County,SC
 45003,Aiken County,SC
 45005,Allendale County,SC
@@ -2362,6 +2406,7 @@ FIPS,COUNTYNAME,STATE
 45087,Union County,SC
 45089,Williamsburg County,SC
 45091,York County,SC
+46000,unidentified county,SD
 46003,Aurora County,SD
 46005,Beadle County,SD
 46007,Bennett County,SD
@@ -2428,6 +2473,7 @@ FIPS,COUNTYNAME,STATE
 46129,Walworth County,SD
 46135,Yankton County,SD
 46137,Ziebach County,SD
+47000,unidentified county,TN
 47001,Anderson County,TN
 47003,Bedford County,TN
 47005,Benton County,TN
@@ -2523,6 +2569,7 @@ FIPS,COUNTYNAME,STATE
 47185,White County,TN
 47187,Williamson County,TN
 47189,Wilson County,TN
+48000,unidentified county,TX
 48001,Anderson County,TX
 48003,Andrews County,TX
 48005,Angelina County,TX
@@ -2777,6 +2824,7 @@ FIPS,COUNTYNAME,STATE
 48503,Young County,TX
 48505,Zapata County,TX
 48507,Zavala County,TX
+49000,unidentified county,UT
 49001,Beaver County,UT
 49003,Box Elder County,UT
 49005,Cache County,UT
@@ -2806,6 +2854,7 @@ FIPS,COUNTYNAME,STATE
 49053,Washington County,UT
 49055,Wayne County,UT
 49057,Weber County,UT
+50000,unidentified county,VT
 50001,Addison County,VT
 50003,Bennington County,VT
 50005,Caledonia County,VT
@@ -2820,6 +2869,7 @@ FIPS,COUNTYNAME,STATE
 50023,Washington County,VT
 50025,Windham County,VT
 50027,Windsor County,VT
+51000,unidentified county,VA
 51001,Accomack County,VA
 51003,Albemarle County,VA
 51005,Alleghany County,VA
@@ -2953,6 +3003,7 @@ FIPS,COUNTYNAME,STATE
 51820,Waynesboro city,VA
 51830,Williamsburg city,VA
 51840,Winchester city,VA
+53000,unidentified county,WA
 53001,Adams County,WA
 53003,Asotin County,WA
 53005,Benton County,WA
@@ -2992,6 +3043,7 @@ FIPS,COUNTYNAME,STATE
 53073,Whatcom County,WA
 53075,Whitman County,WA
 53077,Yakima County,WA
+54000,unidentified county,WV
 54001,Barbour County,WV
 54003,Berkeley County,WV
 54005,Boone County,WV
@@ -3047,6 +3099,7 @@ FIPS,COUNTYNAME,STATE
 54105,Wirt County,WV
 54107,Wood County,WV
 54109,Wyoming County,WV
+55000,unidentified county,WI
 55001,Adams County,WI
 55003,Ashland County,WI
 55005,Barron County,WI
@@ -3119,6 +3172,7 @@ FIPS,COUNTYNAME,STATE
 55137,Waushara County,WI
 55139,Winnebago County,WI
 55141,Wood County,WI
+56000,unidentified county,WY
 56001,Albany County,WY
 56003,Big Horn County,WY
 56005,Campbell County,WY
@@ -3142,16 +3196,20 @@ FIPS,COUNTYNAME,STATE
 56041,Uinta County,WY
 56043,Washakie County,WY
 56045,Weston County,WY
+60000,unidentified county,AS
 60010,Eastern District,AS
 60020,Manu'a District,AS
 60030,Rose Island,AS
 60040,Swains Island,AS
 60050,Western District,AS
+66000,unidentified county,GU
 66010,Guam,GU
+69000,unidentified county,MP
 69085,Northern Islands Municipality,MP
 69100,Rota Municipality,MP
 69110,Saipan Municipality,MP
 69120,Tinian Municipality,MP
+72000,unidentified county,PR
 72001,Adjuntas Municipio,PR
 72003,Aguada Municipio,PR
 72005,Aguadilla Municipio,PR
@@ -3230,7 +3288,9 @@ FIPS,COUNTYNAME,STATE
 72149,Villalba Municipio,PR
 72151,Yabucoa Municipio,PR
 72153,Yauco Municipio,PR
+74000,unidentified county,UM
 74300,Midway Islands,UM
+78000,unidentified county,VI
 78010,St. Croix Island,VI
 78020,St. John Island,VI
 78030,St. Thomas Island,VI
