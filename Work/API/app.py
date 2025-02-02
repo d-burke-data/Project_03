@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 # ----------------------------
 # Database Setup
@@ -26,6 +27,7 @@ Events = Base.classes.events
 # Flask Setup
 # ----------------------------
 app = Flask(__name__)
+CORS(app)
 
 # ----------------------------
 # Flask Routes

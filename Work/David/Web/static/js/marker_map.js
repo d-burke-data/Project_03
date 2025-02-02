@@ -1,3 +1,5 @@
+let api_call = "http://127.0.0.1:5000/api/v1.0/events?start_year=2020&duration=1"
+
 function createMap(begin_markers, end_markers) {
     let street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -29,14 +31,15 @@ function createMap(begin_markers, end_markers) {
 }
 
 function createMarkers() {
-    let tornadoURL = "../../../Data/Tornadoes_1950_2024.json"
+    // let tornadoURL = "../../../Data/Tornadoes_1950_2024.json"
+    let tornadoURL = api_call
 
     d3.json(tornadoURL).then(response => {
         // console.log(response);
         let begin_markers = [];
         let end_markers = [];
 
-        for (let i = 50000; i < 50100; i++) {
+        for (let i = 0; i < response.length; i++) {
             let tornado = response[i];
             if (tornado.BEGIN_LAT) {
                 let begin_coordinates = [tornado.BEGIN_LAT, tornado.BEGIN_LON];                
@@ -53,7 +56,7 @@ function createMarkers() {
                     end_markers.push(end_marker);
 
                     let arrow = new Image();
-                    arrow.src = "../images/arrow_ci.png";
+                    arrow.src = "../Web/static/images/arrow_ci.png";
                     let options = {
                         label: "LINE PLEASE!",
                         labelColor: 'black',
@@ -80,18 +83,16 @@ function createPopup(tornado, is_begin) {
 
     if (is_begin) {
         text +=
-        `<h2>${tornado.TOR_F_SCALE} Tornado (Begin)</h2>
-        <strong>Begin Point</strong>
-        <br>${formatRAP(tornado.BEGIN_RANGE, tornado.BEGIN_AZIMUTH, tornado.BEGIN_LOCATION)}
+        `<h2>${tornado.TOR_F_SCALE} Tornado (Begin Point)</h2>
+        ${formatRAP(tornado.BEGIN_RANGE, tornado.BEGIN_AZIMUTH, tornado.BEGIN_LOCATION)}
         <br>${tornado.BEGIN_TIMESTAMP}`;
         if (tornado.BEGIN_RANGE != 1)
             mile_text += "s";
     }
     else {
         text +=
-        `<h2>${tornado.TOR_F_SCALE} Tornado (End)</h2>
-        <strong>End Point</strong>
-        <br>${formatRAP(tornado.END_RANGE, tornado.END_AZIMUTH, tornado.END_LOCATION)}
+        `<h2>${tornado.TOR_F_SCALE} Tornado (End Point)</h2>
+        ${formatRAP(tornado.END_RANGE, tornado.END_AZIMUTH, tornado.END_LOCATION)}
         <br>${tornado.END_TIMESTAMP}
         `;
         if (tornado.END_RANGE != 1)
