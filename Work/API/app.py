@@ -204,6 +204,15 @@ def get_dashboard():
     # Dashboard data aggregation
     # -----------------------------------------
 
+    # event count by county (for map)
+    county_counts = (base_query
+                     # select fips, county name, and get count
+                     .with_entities(Counties.FIPS, Counties.COUNTYNAME, func.count(Events.EVENT_ID))
+                     # group by fip
+                     .group_by(Counties.FIPS)
+                     .all()
+                     )
+
     # pie chart by EF scale (count of events by scale)
     scale_counts = (base_query
                     # join scales table to reference scales columns
@@ -254,6 +263,15 @@ def get_dashboard():
     # -----------------------------------------
     # Convert each db result
     # -----------------------------------------
+
+    # events by county count
+    county_heatmap = []
+    for (fip, name, cnt) in county_counts:
+        county_heatmap.append({
+            'fip': fip,
+            'name': name,
+            'count': cnt
+        })
 
     # pie chart by EF scale
     scale_pie = []
@@ -317,6 +335,7 @@ def get_dashboard():
     # Setup full response
     # -----------------------------------------
     result = {
+        'county_heatmap': county_heatmap,
         'scale_pie': scale_pie,
         'summary_table': summary_table,
         'duration_table': duration_table,
