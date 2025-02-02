@@ -72,7 +72,7 @@ CREATE TABLE events (
     BEGIN_LON           NUMERIC,
     END_LAT             NUMERIC,
     END_LON             NUMERIC,
-    -- EVENT_NARRATIVE     TEXT,
+    EVENT_NARRATIVE     TEXT,
 
     -- to be removed
     -- TORNADO_ID          INTEGER NOT NULL,
@@ -96,7 +96,7 @@ conn.execute(create_events_table)
 # read csv data
 counties_df = pd.read_csv('../../Data/fips_data.csv', dtype={'FIPS': str})  #force fips to be read as string
 scales_df = pd.read_csv('../../Data/f_scales.csv')
-events_df = pd.read_csv('../../Data/Temp_Tornadoes_1950_2024.csv', dtype={'FIPS': str}, usecols=lambda x: x != 'EVENT_NARRATIVE')  #force fips to be read as string
+events_df = pd.read_csv('../../Data/Tornadoes_1950_2024.csv', dtype={'FIPS': str}, usecols=lambda x: x != 'EVENT_NARRATIVE')  #force fips to be read as string
 
 # append data to existing tables
 counties_df.to_sql('counties', conn, if_exists='append', index=False)
