@@ -1,4 +1,5 @@
-let api_call = "http://127.0.0.1:5000/api/v1.0/events?start_year=2020&duration=1"
+// let api_call = "http://127.0.0.1:5000/api/v1.0/events?start_year=2020&duration=1"
+let api_call = "https://bmitri.pythonanywhere.com/api/v1.0/events?start_year=2020&duration=1"
 
 function createMap(begin_markers, end_markers) {
     let street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
