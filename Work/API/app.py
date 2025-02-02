@@ -212,28 +212,59 @@ def get_dashboard():
                     .all()
                     )
     
+    # summary table
+    summary_info = (base_query
+                     .with_entities(
+                         func.count(Events.EVENT_ID),
+                         func.sum(Events.DAMAGE_PROPERTY),
+                         func.sum(Events.DAMAGE_CROPS),
+                         func.sum(Events.DEATHS),
+                         func.sum(Events.INJURIES)
+                     )
+                     .one()
+                     )
+    
     # close session
     session.close()
 
     # -----------------------------------------
     # Convert each db result
     # -----------------------------------------
+
+    # pie chart by EF scale
     scale_pie = []
     for (scale, count) in scale_counts:
         scale_pie.append({
             'scale': scale,
             'count': count
         })
+
+    # summary table
+    (total_events,
+     total_damage_property,
+     total_damage_crops,
+     total_deaths,
+     total_injuries) = summary_info
+    
+    summary_table = {
+        'total_events': total_events,
+        'total_damage_property': total_damage_property,
+        'total_damage_crops': total_damage_crops,
+        'total_deaths': total_deaths,
+        'total_injuries': total_injuries
+    }
     
     # -----------------------------------------
-    # Setup response
+    # Setup full response
     # -----------------------------------------
     result = {
-        'scale_pie': scale_pie
+        'scale_pie': scale_pie,
+        'summary_table': summary_table
     }
     
     # return result
     return jsonify(result)
+
 # run local server with the app
 if __name__ == '__main__':
     app.run(debug=True)
