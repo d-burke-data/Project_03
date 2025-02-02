@@ -16,7 +16,7 @@ function createMap(Heat_layer) {
 
     // Create the map object
     let map = L.map("map", {
-        center: [40.73, -74.0059], // Initial map center (you can change to your focus area)
+        center: [40.73, -74.0059], 
         zoom: 12,
         layers: [streetmap, Heat_layer]
     });
@@ -28,34 +28,91 @@ function createMap(Heat_layer) {
 }
 
 function createMarkers() {
-    // GeoJSON county data with fips
-    let URL = "Data/geojson-counties-fips.json";
 
-    // Grab data
-    d3.json(URL).then(response => {
+    //API and data call
+    let geoJSON_URL = "Data/geojson-counties-fips.json";
+    let api_URL = "https://bmitri.pythonanywhere.com/api/v1.0/dashboard?start_year=2021&duration=1&state=CA";   //  sample with Base API URL parameters needed to know details(need to add endpoints for all counties) 
+    
+    //county json data
+    d3.json(geoJSON_URL).then(geoData => {    //why the geoData and not response 
+        console.log(geoData);
+    //api data 
+    d3.json(api_URL).then(eventData => {
         console.log(response);
 
-        // Begin heat data
-        let heatData = [];
+    // Loop through each county 
+    geoData.features.forEach(county => {
+        let county_id = county.id; //fips = id in data 
+        let count_name = county.properties.NAME; // Name of county
 
-        // Loop (for each) through all GeoJSON county data with fips
-        
-
-
-
+ 
 
 
-        // Create the heatmap layer using heatData
-        let Heat_layer = L.heatLayer(heatData, {
-            radius: 20,
-            blur: 15,
-            maxZoom: 10
-        });
 
-        // Create the map and add the heatmap layer
-        createMap(Heat_layer);
-    });
+
+
+
+
+
+
+
+
+
+// Create a layer group for heatmap
+let Heat_layer = L.heatLayer(heatArray, {
+radius: 25,
+blur: 15,
+maxZoom: 10
+});
+
+//create map and have heatmap 
+createMap(Heat_layer);
+});
 }
 
-// Call the function to load the heatmap
-createMarkers();
+
+
+
+
+
+
+
+
+
+
+// county json layout 
+// {
+//     "type": "FeatureCollection",
+//     "features": [
+//       {
+//         "type": "Feature",
+//         "properties": {
+//           "GEO_ID": "0500000US01001",
+//           "STATE": "01",
+//           "COUNTY": "001",
+//           "NAME": "Autauga"
+//         },
+//         "geometry": {
+//           "type": "Polygon",
+//           "coordinates": [[...]]
+//         },
+//         "id": "01001"
+//       },
+//       {
+//         "type": "Feature",
+//         "properties": {
+//           "GEO_ID": "0500000US01009",
+//           "STATE": "01",
+//           "COUNTY": "009",
+//           "NAME": "Blount"
+//         },
+//         "geometry": {
+//           "type": "Polygon",
+//           "coordinates": [[...]]
+//         },
+//         "id": "01009"
+//       }
+//     ]
+//   }
+
+     
