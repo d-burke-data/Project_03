@@ -179,6 +179,9 @@ def get_dashboard():
     state = request.args.get('state', None, type=str)  #optional
     county = request.args.get('fip', None, type=str)   #optional
 
+    # calculate months in duration
+    months = duration * 12
+
     # create session to db
     session = Session(engine)
 
@@ -246,13 +249,33 @@ def get_dashboard():
      total_deaths,
      total_injuries) = summary_info
     
+    def avg(val): # define avg function & avoiding dividing by 0
+        return round(float(val)/months, 2) if months else 0
+    
     summary_table = {
-        'total_events': total_events,
-        'total_damage_property': total_damage_property,
-        'total_damage_crops': total_damage_crops,
-        'total_deaths': total_deaths,
-        'total_injuries': total_injuries
+        'events': {
+            'total': total_events,
+            'avg_per_month': avg(total_events)
+        },
+        'damaged_property': {
+            'total': total_damage_property,
+            'avg_per_month': avg(total_damage_property)
+        },
+        'damaged_crops': {
+            'total': total_damage_crops,
+            'avg_per_month': avg(total_damage_crops)
+        },
+        'deaths': {
+            'total': total_deaths,
+            'avg_per_month': avg(total_deaths)
+        },
+        'injuries': {
+            'total': total_injuries,
+            'avg_per_month': avg(total_injuries)
+        }
     }
+
+
     
     # -----------------------------------------
     # Setup full response
