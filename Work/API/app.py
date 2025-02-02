@@ -4,7 +4,7 @@ from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 
 # ----------------------------
 # Database Setup
@@ -34,7 +34,7 @@ app = Flask(__name__)
 # home page
 @app.route('/')
 def welcome():
-     return render_template('index.html')
+     return ('Welcome to the tornado API')
 
 # query events by year (optional: state or county)
 @app.route('/api/v1.0/events', methods=['GET'])
