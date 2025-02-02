@@ -227,6 +227,16 @@ def get_dashboard():
                      .one()
                      )
     
+    # duration info (total time of events and avg duration per event)
+    duration_info = (base_query
+                     .with_entities(
+                         # calculate duration in seconds and get hours
+                         func.sum((Events.END_TIMESTAMP - Events.BEGIN_TIMESTAMP)/3600.0),
+                         func.avg((Events.END_TIMESTAMP - Events.BEGIN_TIMESTAMP)/3600.0)  #avg time each event lasted
+                     )
+                     .one()
+                     )
+    
     # close session
     session.close()
 
@@ -275,14 +285,21 @@ def get_dashboard():
         }
     }
 
-
+    # duration table
+    (total_hours, avg_hours) = duration_info
+    
+    duration_table = {
+        'total_hrs': round(total_hours, 2),
+        'avg_hrs_per_event': round(avg_hours, 2)
+    }
     
     # -----------------------------------------
     # Setup full response
     # -----------------------------------------
     result = {
         'scale_pie': scale_pie,
-        'summary_table': summary_table
+        'summary_table': summary_table,
+        'duration_table': duration_table
     }
     
     # return result
