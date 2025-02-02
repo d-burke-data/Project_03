@@ -156,6 +156,84 @@ def get_counties():
     # return jsonified data
     return jsonify(counties_info)
 
+# query for dashboard charts/info
+@app.route('/api/v1.0/dashboard')
+def get_dashboard():
+    # endpoint example:/api/v1.0/dashboard?start_year=2020&duration=1&state=AL&fip=01234
+    
+    '''
+    Required: 
+        ?start_year = YYYY
+        ?duration = # (number of years)
+    Optional:
+        ?state = state abbreviation
+        ?fip = county_fip
+    '''
+    # -----------------------------------------
+    # Base query setup
+    # -----------------------------------------
+
+    # request endpoints
+    start_year = request.args.get('start_year', type=int)
+    duration = request.args.get('duration', type=int)
+    state = request.args.get('state', None, type=str)  #optional
+    county = request.args.get('fip', None, type=str)   #optional
+
+    # create session to db
+    session = Session(engine)
+
+    # build base query
+    base_query = session.query(Events).join(Counties, Events.FIPS == Counties.FIPS)
+
+    # required: filter by year range
+    base_query = base_query.filter(
+        func.strftime('%Y', Events.BEGIN_TIMESTAMP, 'unixepoch') >= str(start_year),
+        func.strftime('%Y', Events.BEGIN_TIMESTAMP, 'unixepoch') <= str(start_year + duration - 1)
+    )
+
+    # optional: filter for location endpoints
+    if state:
+        base_query = base_query.filter(Counties.STATE == state)
+    if county:
+        base_query = base_query.filter(Counties.FIPS == county)
+    
+    # -----------------------------------------
+    # Dashboard data aggregation
+    # -----------------------------------------
+
+    # pie chart by EF scale (count of events by scale)
+    scale_counts = (base_query
+                    # join scales table to reference scales columns
+                    .join(Scales, Events.TOR_F_LEVEL == Scales.F_SCALE)
+                    # select fujita label and event count
+                    .with_entities(Scales.FUJITA, func.count(Events.EVENT_ID))
+                    # group by fujita label
+                    .group_by(Scales.FUJITA)
+                    .all()
+                    )
+    
+    # close session
+    session.close()
+
+    # -----------------------------------------
+    # Convert each db result
+    # -----------------------------------------
+    scale_pie = []
+    for (scale, count) in scale_counts:
+        scale_pie.append({
+            'scale': scale,
+            'count': count
+        })
+    
+    # -----------------------------------------
+    # Setup response
+    # -----------------------------------------
+    result = {
+        'scale_pie': scale_pie
+    }
+    
+    # return result
+    return jsonify(result)
 # run local server with the app
 if __name__ == '__main__':
     app.run(debug=True)
