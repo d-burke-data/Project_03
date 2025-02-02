@@ -236,7 +236,18 @@ def get_dashboard():
                      )
                      .one()
                      )
-    
+    # monthly event count
+    monthly_counts = (base_query
+                      .with_entities(
+                          func.strftime('%Y', func.datetime(Events.BEGIN_TIMESTAMP, 'unixepoch')).label('yr'),
+                          func.strftime('%m', func.datetime(Events.BEGIN_TIMESTAMP, 'unixepoch')).label('mn'),
+                          func.count(Events.EVENT_ID)
+                      )
+                      .group_by('yr', 'mn')
+                      .order_by('yr', 'mn')  #order data chronologically
+                      .all()
+                      )
+
     # close session
     session.close()
 
@@ -292,6 +303,15 @@ def get_dashboard():
         'total_hrs': round(total_hours, 2),
         'avg_hrs_per_event': round(avg_hours, 2)
     }
+
+    # monthly events count chart
+    monthly_events_chart = []
+    for (yr, mn, cnt) in monthly_counts:
+        monthly_events_chart.append({
+            'year': yr,
+            'month': mn,
+            'count': cnt
+        })
     
     # -----------------------------------------
     # Setup full response
@@ -299,7 +319,8 @@ def get_dashboard():
     result = {
         'scale_pie': scale_pie,
         'summary_table': summary_table,
-        'duration_table': duration_table
+        'duration_table': duration_table,
+        'monthly_events_chart': monthly_events_chart
     }
     
     # return result
