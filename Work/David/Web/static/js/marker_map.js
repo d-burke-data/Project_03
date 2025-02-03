@@ -1,6 +1,7 @@
 // let api_call = "http://127.0.0.1:5000/api/v1.0/events?start_year=2020&duration=1"
-let api_call = "https://bmitri.pythonanywhere.com/api/v1.0/events?start_year=2015&duration=5"
-var tornadoMap;
+// let api_call = "https://bmitri.pythonanywhere.com/api/v1.0/events?start_year=2015&duration=5"
+
+let eventMapURL = baseURL + 'events';
 
 let colorScale = {
     "U": "white",
@@ -12,109 +13,217 @@ let colorScale = {
     "5": "black"
 };
 
+let street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+});
+
+let topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+});
+
 let view = {
     center: [37.09, -95.71],
     zoom: 5,
     endPointThreshold: 8
 };
 
-let tornadoURL = api_call;
-let begin_markers = [];
-let end_markers = [];
+let baseMaps = {
+    "Street": street,
+    "Topographic": topo
+};
 
-d3.json(tornadoURL).then(response => {
-    for (let i = 0; i < response.length; i++) {
-        let tornado = response[i];
-        if (tornado.BEGIN_LAT) {
-            let color = colorScale[tornado.TOR_F_LEVEL];
-            let begin_coordinates = [tornado.BEGIN_LAT, tornado.BEGIN_LON];                
-            let begin_marker = L.shapeMarker(begin_coordinates, {
-                title: `${tornado.TOR_F_SCALE} Begin Point`,
-                zIndexOffset: 100,
-                shape: "triangle-down",
-                radius: getMarkerSize(view.zoom, true),                    
-                color: "black",
-                weight: 1,
-                fillColor: color,
-                fillOpacity: 0.8
-            } ).bindPopup(createPopup(tornado, true));
-            begin_markers.push(begin_marker);
+let beginMarkers = [];
+let endMarkers = [];
+let beginLayerGroup = L.layerGroup();
+let endLayerGroup = L.layerGroup();
 
-            if (tornado.END_LAT) {
-                let end_coordinates = [tornado.END_LAT, tornado.END_LON];
-                if (begin_coordinates != end_coordinates) {
-                    let end_marker = L.shapeMarker(end_coordinates, {
-                        title: `${tornado.TOR_F_SCALE} End Point`,
-                        zIndexOffset: -100,
-                        shape: "square",
-                        radius: getMarkerSize(view.zoom, false),
-                        color: "black",
-                        weight: 1,
-                        fillColor: color,
-                        fillOpacity: 0.8
-                    } ).bindPopup(createPopup(tornado, false));
-                    end_markers.push(end_marker);
+let overlays = {
+    "Begin Points": beginLayerGroup,
+    "End Points": endLayerGroup
+}
+
+let tornadoMap = L.map("map", {
+    center: view.center,
+    zoom: view.zoom,
+    layers: [street, beginLayerGroup, endLayerGroup]
+});
+
+L.control.layers(baseMaps, null, {
+    collapsed: true
+}).addTo(tornadoMap);
+
+tornadoMap.on("zoomend", markersZoom);
+populateMap();
+
+// let tornadoURL = api_call;
+// let eventMapLayers = [];
+
+
+dashboardForm.addEventListener('submit', function (event) {
     
-                    // Calculate size & frequency based on tornado length?
-                    let pathMarkerFrequency = 10;
-                    let pathMarkerSize = "10%";
+    // prevent page reload
+    event.preventDefault();
+
+    // load dashboard
+    // refreshDashboard();    
+    populateMap();
+});
+
+function populateMap() {    
+    // collect values
+    const startYear = startYearDropdown.value;
+    const duration = durationDropdown.value;
+    const state = stateDropdown.value;
+    const fip = countyDropdown.value;
+
+    // validate required fields
+    if (!startYear || !duration) {
+        // alert('Please select BOTH start year and duration :)');
+        return;
+    }
+
+    // console.log("Populate Map");
+
+    // build final dashboard url api call
+    //required endpoints
+    let params = new URLSearchParams({
+        start_year: startYear,
+        duration: duration
+    });
+
+    // optional endpoints
+    if (state) {
+        params.append('state', state);
+    }
+    if (fip) {
+        params.append('fip', fip);
+    }
+
+    // final API URL
+    const finalURL = `${eventMapURL}?${params.toString()}`;
+    // console.log('Dashboard URL:', finalURL);
+    console.log('Map URL: ', finalURL);
+
+    d3.json(finalURL).then(response => {
+        beginMarkers.length = 0;
+        endMarkers.length = 0;
+        for (let i = 0; i < response.length; i++) {
+            let tornado = response[i];
+            if (tornado.BEGIN_LAT) {
+                let color = colorScale[tornado.TOR_F_LEVEL];
+                let begin_coordinates = [tornado.BEGIN_LAT, tornado.BEGIN_LON];                
+                let begin_marker = L.shapeMarker(begin_coordinates, {
+                    title: `${tornado.TOR_F_SCALE} Begin Point`,
+                    zIndexOffset: 100,
+                    shape: "triangle-down",
+                    radius: getMarkerSize(view.zoom, true),                    
+                    color: "black",
+                    weight: 1,
+                    fillColor: color,
+                    fillOpacity: 0.8
+                } ).bindPopup(createPopup(tornado, true), {
+                    maxWidth: 650,
+                    maxHeight: 400
+                });
+                beginMarkers.push(begin_marker);
     
-                    // Path between BEGIN and END points
-                    let tornado_path = L.polyline([
-                        [tornado.BEGIN_LAT, tornado.BEGIN_LON],
-                        [tornado.END_LAT, tornado.END_LON]
-                    ], {
-                        stroke: false,
-                        color: color,
-                        zIndexOffset: -200
-                    }).arrowheads({                        
-                        yawn: 40,
-                        size: pathMarkerSize,
-                        frequency: pathMarkerFrequency,
-                        proportionalToTotal: false,
-                        fill: true,                        
-                        fillColor: color
-                    });
-                    end_markers.push(tornado_path);
+                if (tornado.END_LAT) {
+                    let end_coordinates = [tornado.END_LAT, tornado.END_LON];
+                    if (begin_coordinates != end_coordinates) {
+                        let end_marker = L.shapeMarker(end_coordinates, {
+                            title: `${tornado.TOR_F_SCALE} End Point`,
+                            zIndexOffset: -100,
+                            shape: "square",
+                            radius: getMarkerSize(view.zoom, false),
+                            color: "black",
+                            weight: 1,
+                            fillColor: color,
+                            fillOpacity: 0.8
+                        } ).bindPopup(createPopup(tornado, false), {
+                            maxWidth: 650,
+                            maxHeight: 400
+                        });
+                        endMarkers.push(end_marker);
+        
+                        // Calculate size & frequency based on tornado length?
+                        let pathMarkerFrequency = 10;
+                        let pathMarkerSize = "10%";
+        
+                        // Path between BEGIN and END points
+                        let tornado_path = L.polyline([
+                            [tornado.BEGIN_LAT, tornado.BEGIN_LON],
+                            [tornado.END_LAT, tornado.END_LON]
+                        ], {
+                            stroke: false,
+                            color: color,
+                            zIndexOffset: -200
+                        }).arrowheads({                        
+                            yawn: 40,
+                            size: pathMarkerSize,
+                            frequency: pathMarkerFrequency,
+                            proportionalToTotal: false,
+                            fill: true,                        
+                            fillColor: color
+                        });
+                        endMarkers.push(tornado_path);
+                    }
                 }
             }
         }
-    }
+    
+        // let beginLayerGroup = L.layerGroup(beginMarkers);
+        // let endLayerGroup = L.layerGroup(endMarkers);
+    
+        // let overlays = {
+        //     "Begin Points": beginLayerGroup,
+        //     "End Points": endLayerGroup
+        // };
 
-    let beginLayerGroup = L.layerGroup(begin_markers);
-    let endLayerGroup = L.layerGroup(end_markers);
+        // Remove existing overlays
+        // eventMapLayers.array.forEach(element => {
+        //     tornadoMap.removeLayer(eventMapLayers.pop(element));
+        // });
 
-    let street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        // beginLayerGroup.clearLayers();
+        // endLayerGroup.clearLayers();
+
+        tornadoMap.removeLayer(beginLayerGroup);
+        tornadoMap.removeLayer(endLayerGroup);        
+
+        // beginLayerGroup.addLayer(beginMarkers);
+        beginLayerGroup = L.layerGroup(beginMarkers);
+        // endLayerGroup.addLayer(endMarkers);
+        endLayerGroup = L.layerGroup(endMarkers);
+
+        tornadoMap.addLayer(beginLayerGroup);
+        tornadoMap.addLayer(endLayerGroup);
+
+        markersZoom();
+
+        // Add new overlays
+        // tornadoMap.addLayer(endLayerGroup);
+        // eventMapLayers.push(endLayerGroup);
+        // tornadoMap.addLayer(beginLayerGroup);
+        // eventMapLayers.push(beginLayerGroup);       
+
+        // L.control.layers(overlays, {
+        //     collapsed: true
+        // }).addTo(tornadoMap);
+    
+        // tornadoMap = L.map("map", {
+        //     center: view.center,
+        //     zoom: view.zoom,
+        //     layers: [street, beginLayerGroup]
+        // });
+
+        
     });
+}
 
-    let topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-    });
-
-    let baseMaps = {
-        "Street": street,
-        "Topographic": topo
-    };
-
-    let overlays = {
-        "Begin Points": beginLayerGroup,
-        "End Points": endLayerGroup
-    };
-
-    tornadoMap = L.map("map", {
-        center: view.center,
-        zoom: view.zoom,
-        layers: [street, beginLayerGroup]
-    });
-
-    L.control.layers(baseMaps, overlays, {
-        collapsed: true
-    }).addTo(tornadoMap);
-
-    tornadoMap.on("zoomend", () => {
+function markersZoom() {
         // console.log(tornadoMap.getZoom());
         // console.log(getMarkerSize(tornadoMap.getZoom(), true));
+
         if (tornadoMap.getZoom() < view.endPointThreshold) {
             if (tornadoMap.hasLayer(endLayerGroup))
                 tornadoMap.removeLayer(endLayerGroup);
@@ -123,15 +232,15 @@ d3.json(tornadoURL).then(response => {
             if (!tornadoMap.hasLayer(endLayerGroup))
                 tornadoMap.addLayer(endLayerGroup);
         }
-        resizeMarkers() });
-});
+        resizeMarkers();
+}
 
 function resizeMarkers() {
-    begin_markers.forEach(element => {
+    beginMarkers.forEach(element => {
         element.setRadius(getMarkerSize(tornadoMap.getZoom(), true));
     });
-    for (let i = 0; i < end_markers.length; i++) {
-        let element = end_markers[i];
+    for (let i = 0; i < endMarkers.length; i++) {
+        let element = endMarkers[i];
         if ((i % 2) == 0) {
             // This is a marker
             element.setRadius(getMarkerSize(tornadoMap.getZoom(), false));
@@ -156,18 +265,20 @@ function createPopup(tornado, is_begin) {
 
     if (is_begin) {
         let timestamp = Number(tornado.BEGIN_TIMESTAMP)
-        let begin_date = new Date(Date.UTC(0,0,0,0,0,timestamp))
+        let beginDate = new Date(timestamp * 1000).toUTCString();
         text +=
         `<h2>${tornado.TOR_F_SCALE} Tornado (Begin Point)</h2>
         ${formatRAP(tornado.BEGIN_RANGE, tornado.BEGIN_AZIMUTH, tornado.BEGIN_LOCATION)}, ${tornado.STATE}
         <br>Timestamp: ${timestamp}
-        <br>${begin_date}`;
+        <br>${beginDate}`;
     }
     else {
+        let timestamp = Number(tornado.BEGIN_TIMESTAMP)
+        let endDate = new Date(timestamp * 1000).toUTCString();
         text +=
         `<h2>${tornado.TOR_F_SCALE} Tornado (End Point)</h2>
         ${formatRAP(tornado.END_RANGE, tornado.END_AZIMUTH, tornado.END_LOCATION)}, ${tornado.STATE}
-        <br>${new Date(Number(tornado.END_TIMESTAMP)).toUTCString()}`;
+        <br>${endDate}`;
     }
 
     lngth = Number.parseFloat(tornado.TOR_LENGTH).toPrecision(2)

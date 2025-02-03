@@ -282,6 +282,7 @@ function refreshDashboard(forceYear, forceDuration) {
     // final API URL
     const finalURL = `${dashboardURL}?${params.toString()}`;
     console.log('Dashboard URL:', finalURL);
+    
 
     /*****************************************
      * Build visualizations/tables
