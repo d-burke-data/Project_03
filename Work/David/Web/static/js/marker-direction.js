@@ -118,7 +118,7 @@ L.AngleIcon = L.Icon.extend({
             var y2 = B.lon*Math.pow(10,12);
             angle = Math.atan2(y2-y1,x2-x1)
         }
-        options.angle = angle;
+        this.options.angle = angle;
         return angle;
     },
 
@@ -130,7 +130,7 @@ L.AngleIcon = L.Icon.extend({
     setHeading : function(heading) {
 
         if(!heading){
-            heading = options.angle;
+            heading = this.options.angle;
         }
         this.options.course = (heading % 360);
         var s = this.options.iconSize;
