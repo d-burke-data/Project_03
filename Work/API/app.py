@@ -269,6 +269,7 @@ def get_dashboard():
     # events by county count
     county_heatmap = []
     for (fip, name, cnt) in county_counts:
+        cnt = cnt or 0  #if cnt is None make 0
         county_heatmap.append({
             'fip': fip,
             'name': name,
@@ -278,6 +279,7 @@ def get_dashboard():
     # pie chart by EF scale
     scale_pie = []
     for (scale, count) in scale_counts:
+        count = count or 0  #if cnt is None make 0
         scale_pie.append({
             'scale': scale,
             'count': count
@@ -289,6 +291,12 @@ def get_dashboard():
      total_damage_crops,
      total_deaths,
      total_injuries) = summary_info
+    
+    total_events            = total_events or 0
+    total_damage_property   = total_damage_property or 0
+    total_damage_crops      = total_damage_crops or 0
+    total_deaths            = total_deaths or 0
+    total_injuries          = total_injuries or 0
     
     def avg(val): # define avg function & avoiding dividing by 0
         return round(float(val)/months, 2) if months else 0
@@ -318,15 +326,19 @@ def get_dashboard():
 
     # duration table
     (total_hours, avg_hours) = duration_info
+    total_hours = total_hours or 0.0
+    avg_hours = avg_hours or 0.0
     
     duration_table = {
         'total_hrs': round(total_hours, 2),
         'avg_hrs_per_event': round(avg_hours, 2)
     }
 
+
     # monthly events count chart
     monthly_events_chart = []
     for (yr, mn, cnt) in monthly_counts:
+        cnt = cnt or 0   #if cnt is None make 0
         monthly_events_chart.append({
             'year': yr,
             'month': mn,
