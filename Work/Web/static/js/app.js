@@ -10,11 +10,15 @@ let allCounties = [];
 /*****************************************
  * DOM References
  *****************************************/
+// for dropdown
 const dashboardForm = document.getElementById('dashboardForm');
 const startYearDropdown = document.getElementById('startYearDropdown');
 const durationDropdown = document.getElementById('durationDropdown');
 const stateDropdown = document.getElementById('stateDropdown');
 const countyDropdown = document.getElementById('countyDropdown');
+
+// for visualizations
+const durationTable = document.getElementById('durationTable');
 
 
 /*****************************************
@@ -112,6 +116,35 @@ stateDropdown.addEventListener('change', () => {
 });
 
 /*****************************************
+ * Functions to build visualizations/tables
+ *****************************************/
+function buildDurationTable(durationData) {
+    // clear existing
+    durationTable.innerHTML = '';
+
+    // build two row table
+    let html = `
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Total Hours</td>
+                <td>${durationData.total_hrs}</td>
+            </tr>
+            <tr>
+                <td>Avg Hours Per Event</td>
+                <td>${durationData.avg_hrs_per_event}</td>
+            </tr>
+        </tbody>
+    `;
+    durationTable.innerHTML = html;
+}
+
+/*****************************************
  * Generate button
  *****************************************/
 dashboardForm.addEventListener('submit', function (event) {
@@ -119,6 +152,9 @@ dashboardForm.addEventListener('submit', function (event) {
     // prevent page reload
     event.preventDefault();
 
+    /*****************************************
+     * Build final api url
+     *****************************************/
     // collect values
     const startYear = startYearDropdown.value;
     const duration = durationDropdown.value;
@@ -149,8 +185,16 @@ dashboardForm.addEventListener('submit', function (event) {
     // final API URL
     const finalURL = `${dashboardURL}?${params.toString()}`
 
+    /*****************************************
+     * Build visualizations/tables
+     *****************************************/
     // fetch data
     d3.json(finalURL).then(data => {
+        // console log api data
         console.log('API data:', data);
-    });
+
+        // build table
+        buildDurationTable(data.duration_table);
+    })
+    .catch((err) => console.error(err));
 });
