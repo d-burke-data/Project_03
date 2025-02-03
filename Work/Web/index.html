@@ -13,6 +13,32 @@
   <body>
     <h1>Hello, world!</h1>
 
+    <div class="container">
+      <h1>Dropdown options</h1>
+
+      <!-- Start Year Dropdown -->
+       <div class="mb-3">
+        <label for="startYearDropdown" class="form-label">Start Year:</label>
+        <select id="startYearDropdown" class="form-select">
+          <option value="">Loading years...</option>
+        </select>
+       </div>
+
+       <!-- Duration Dropdown -->
+        <div class="mb-3">
+          <label for="durationDropdown" class="form-label">Duration (years):</label>
+          <select id="durationDropdown" class="form-select">
+            <!-- hardcoded options -->
+          </select>
+        </div>
+
+        <!-- Generate Button -->
+         <button id="generateBtn" class="btn btn-primary">
+          Generate
+         </button>
+
+    </div>
+
     <!-- Load JavScript-->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="static/js/app.js"></script>
