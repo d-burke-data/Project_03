@@ -123,7 +123,7 @@ dashboardForm.addEventListener('submit', function (event) {
     const startYear = startYearDropdown.value;
     const duration = durationDropdown.value;
     const state = stateDropdown.value;
-    const fips = countyDropdown.value;
+    const fip = countyDropdown.value;
 
     // validate required fields
     if (!startYear || !duration) {
@@ -142,8 +142,8 @@ dashboardForm.addEventListener('submit', function (event) {
     if (state) {
         params.append('state', state);
     }
-    if (fips) {
-        params.append('fips', fips);
+    if (fip) {
+        params.append('fip', fip);
     }
 
     // final API URL
