@@ -206,12 +206,14 @@ function buildPieChart(scaleData) {
 
     // Define Layout
     let layout = {
-        height: 400,
-        width: 400
+        // height: 400,
+        // width: 400
+        margin: { t: 40, b: 40} // top/bottom margin in px
+        // legend: { orientation: 'h' }
     };
 
     // Render Pie Chart inside the correct div
-    Plotly.newPlot('scalePieChart', pieData, layout);
+    Plotly.newPlot('scalePieChart', pieData, layout, {responsive: true});
 }
 function buildMonthlyEventsChart(monthlyEventsData) {
     // create x axis labels (YYYY-MM) and y axis counts arrays
@@ -231,7 +233,7 @@ function buildMonthlyEventsChart(monthlyEventsData) {
     };
 
     // plot chart
-    Plotly.newPlot(monthlyEventsChart, [trace], layout);
+    Plotly.newPlot(monthlyEventsChart, [trace], layout, {responsive: true});
 }
 
 /*****************************************
