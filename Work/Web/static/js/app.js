@@ -32,14 +32,14 @@ function populateDropdown(selectElement, items, placeholder) {
     selectElement.innerHTML = '';
 
     // add placeholder option
-    const placeholderOption = document.createElement('option');
+    let placeholderOption = document.createElement('option');
     placeholderOption.value = '';
     placeholderOption.textContent = placeholder;
     selectElement.appendChild(placeholderOption);
 
     // add dropdown options
     items.forEach((item) => {
-        const option = document.createElement('option');
+        let option = document.createElement('option');
         option.value = item;
         option.textContent = item;
         selectElement.appendChild(option);
@@ -52,14 +52,14 @@ function populateCountyDropdown(selectElement, items, placeholder) {
     selectElement.innerHTML = '';
 
     // add placeholder option
-    const placeholderOption = document.createElement('option');
+    let placeholderOption = document.createElement('option');
     placeholderOption.value = '';
     placeholderOption.textContent = placeholder;
     selectElement.appendChild(placeholderOption);
 
     // add each county
     items.forEach((item) => {
-        const option = document.createElement('option');
+        let option = document.createElement('option');
         option.value = item.FIPS;  //fips code (hidden value)
         option.textContent = item.COUNTYNAME;  //display name
         selectElement.appendChild(option);
@@ -79,7 +79,7 @@ window.addEventListener('DOMContentLoaded', () => {
             populateDropdown(stateDropdown, data.states, 'Select...');
             
             // find latest year
-            const latestYear = Math.max(...data.years);
+            let latestYear = Math.max(...data.years);
 
             // initialize dashboard
             refreshDashboard(latestYear, 1);
@@ -106,7 +106,7 @@ window.addEventListener('DOMContentLoaded', () => {
  *****************************************/
 stateDropdown.addEventListener('change', () => {
     // capture selected state
-    const selectedState = stateDropdown.value;
+    let selectedState = stateDropdown.value;
     if (!selectedState) {
         // reset county dropdown if user cleared selection
         countyDropdown.innerHTML = "<option value=''>Select a State first...</option>";
@@ -114,7 +114,7 @@ stateDropdown.addEventListener('change', () => {
     }
 
     // filter counties based on state
-    const filtered = allCounties.filter(
+    let filtered = allCounties.filter(
         (c) => c.STATE == selectedState
     );
 
@@ -157,7 +157,7 @@ function buildTotalsTable(summaryData) {
     totalsTable.innerHTML = '';
 
     // create name per key
-    const rowMap = {
+    let rowMap = {
         events: 'Events',
         deaths: 'Deaths',
         injuries: 'Injuries',
@@ -176,9 +176,9 @@ function buildTotalsTable(summaryData) {
         <tbody>
     `;
     for (let key in rowMap) {
-        const label = rowMap[key];
+        let label = rowMap[key];
         // grabbing total value
-        const totalValue = summaryData[key]?.total ?? 0;
+        let totalValue = summaryData[key]?.total ?? 0;
         html += `
             <tr>
                 <td>${label}</td>
@@ -253,10 +253,10 @@ function refreshDashboard(forceYear, forceDuration) {
     }
 
     // collect values
-    const startYear = startYearDropdown.value;
-    const duration = durationDropdown.value;
-    const state = stateDropdown.value;
-    const fip = countyDropdown.value;
+    let startYear = startYearDropdown.value;
+    let duration = durationDropdown.value;
+    let state = stateDropdown.value;
+    let fip = countyDropdown.value;
 
     // validate required fields
     if (!startYear || !duration) {
