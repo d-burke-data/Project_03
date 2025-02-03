@@ -9,6 +9,7 @@ const dashboardURL = baseURL + 'dashboard';
 /*****************************************
  * DOM References
  *****************************************/
+const dashboardForm = document.getElementById('dashboardForm');
 const startYearDropdown = document.getElementById('startYearDropdown');
 const durationDropdown = document.getElementById('durationDropdown');
 
@@ -43,20 +44,24 @@ window.addEventListener('DOMContentLoaded', () => {
     .then((res) => res.json())
     .then((data) => {
         // populate start year and state dropdowns
-        populateDropdown(startYearDropdown, data.years, 'Select Year');
+        populateDropdown(startYearDropdown, data.years, 'Select...');
         //populateDropdown(startYearDropdown, data.states, 'Select State');
     })
     .catch((err) => console.error('Error fetching options', err));
 
     // hardcode duration dropdown options (1-10 years)
     const durations = [1,2,3,4,5,6,7,8,9,10];
-    populateDropdown(durationDropdown, durations, 'Select Duration');
+    populateDropdown(durationDropdown, durations, 'Select...');
 });
 
 /*****************************************
  * Generate button
  *****************************************/
-generateBtn.addEventListener('click', () => {
+dashboardForm.addEventListener('submit', function (event) {
+    
+    // prevent page reload
+    event.preventDefault();
+
     // collect values
     const startYear = startYearDropdown.value;
     const duration = durationDropdown.value;
@@ -80,18 +85,3 @@ generateBtn.addEventListener('click', () => {
         console.log('API data:', data);
     });
 });
-
-//fetch the api
-// fetch(apiURL)
-//     .then(response => response.json())
-//     .then(data => {
-//         // console log it
-//         console.log('API data:', data);
-//     })
-//     .catch(error => {
-//         console.error('Error fectching API:', error);
-//     });
-
-// d3.json(finalURL).then(data => {
-//     console.log('API data:', data);
-// });
