@@ -64,9 +64,9 @@ function populateCountyDropdown(selectElement, items, placeholder) {
     });
 }
 
-/*****************************************
- * Fetch options from API (on page load)
- *****************************************/
+/**********************************************
+ * Initialize dash/Fetch options (on page load)
+ *********************************************/
 window.addEventListener('DOMContentLoaded', () => {
     // fetch options route for years and states
     fetch(optionsURL)
@@ -75,6 +75,12 @@ window.addEventListener('DOMContentLoaded', () => {
             // populate start year and state dropdowns
             populateDropdown(startYearDropdown, data.years, 'Select...');
             populateDropdown(stateDropdown, data.states, 'Select...');
+            
+            // find latest year
+            const latestYear = Math.max(...data.years);
+
+            // initialize dashboard
+            refreshDashboard(latestYear, 1);
         })
         .catch((err) => console.error('Error fetching options', err));
 
@@ -145,16 +151,21 @@ function buildDurationTable(durationData) {
 }
 
 /*****************************************
- * Generate button
+ * Initialize/refresh dashboard function
  *****************************************/
-dashboardForm.addEventListener('submit', function (event) {
-    
-    // prevent page reload
-    event.preventDefault();
+function refreshDashboard(forceYear, forceDuration) {
 
     /*****************************************
-     * Build final api url
+     * Build api url
      *****************************************/
+    // initialize dashboard values (if provided override dropdowns time values)
+    if (forceYear !== undefined) {
+        startYearDropdown.value = forceYear;
+    }
+    if (forceDuration !== undefined) {
+        durationDropdown.value = forceDuration;
+    }
+
     // collect values
     const startYear = startYearDropdown.value;
     const duration = durationDropdown.value;
@@ -183,7 +194,8 @@ dashboardForm.addEventListener('submit', function (event) {
     }
 
     // final API URL
-    const finalURL = `${dashboardURL}?${params.toString()}`
+    const finalURL = `${dashboardURL}?${params.toString()}`;
+    console.log('Dahboard URL:', finalURL);
 
     /*****************************************
      * Build visualizations/tables
@@ -197,4 +209,16 @@ dashboardForm.addEventListener('submit', function (event) {
         buildDurationTable(data.duration_table);
     })
     .catch((err) => console.error(err));
+}
+
+/*****************************************
+ * Generate button
+ *****************************************/
+dashboardForm.addEventListener('submit', function (event) {
+    
+    // prevent page reload
+    event.preventDefault();
+
+    // load dashboard
+    refreshDashboard();
 });
