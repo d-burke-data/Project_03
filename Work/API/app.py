@@ -382,7 +382,7 @@ def get_options():
     states = [state[0] for state in states_query]
 
     # sort result
-    years.sort()
+    years.sort(reverse=True)
     states.sort()
 
     # ---------------------------
