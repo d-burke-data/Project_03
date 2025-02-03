@@ -20,6 +20,7 @@ const countyDropdown = document.getElementById('countyDropdown');
 // for visualizations
 const durationTable = document.getElementById('durationTable');
 const totalsTable = document.getElementById('totalsTable');
+const scalePieChart = document.getElementById('scalePieChart');
 const monthlyEventsChart = document.getElementById('monthlyEventsChart');
 
 /*****************************************
@@ -189,6 +190,29 @@ function buildTotalsTable(summaryData) {
     totalsTable.innerHTML = html;
 }
 
+function buildPieChart(scaleData) {
+    // Extract labels (scales) and values (counts)
+    let labels = scaleData.map((entry) => entry.scale);
+    let values = scaleData.map((entry) => entry.count);
+
+    // Create Pie Chart Data
+    let pieData = [{
+        labels: labels,
+        values: values,
+        type: 'pie',
+        textinfo: 'label+percent',
+        insidetextorientation: 'radial'
+    }];
+
+    // Define Layout
+    let layout = {
+        height: 400,
+        width: 400
+    };
+
+    // Render Pie Chart inside the correct div
+    Plotly.newPlot('scalePieChart', pieData, layout);
+}
 function buildMonthlyEventsChart(monthlyEventsData) {
     // create x axis labels (YYYY-MM) and y axis counts arrays
     let xValues = monthlyEventsData.map((item) => `${item.year}-${item.month}`);
@@ -268,6 +292,7 @@ function refreshDashboard(forceYear, forceDuration) {
         // build visualizations
         buildDurationTable(data.duration_table);
         buildTotalsTable(data.summary_table);
+        buildPieChart(data.scale_pie);
         buildMonthlyEventsChart(data.monthly_events_chart);
     })
     .catch((err) => console.error(err));
