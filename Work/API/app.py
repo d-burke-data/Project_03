@@ -347,6 +347,55 @@ def get_dashboard():
     # return result
     return jsonify(result)
 
+# query for available dropdown options
+@app.route('/api/v1.0/options')
+def get_options():
+
+    # ---------------------------
+    # Get list of unique options
+    # ---------------------------
+
+    # create session to db
+    session = Session(engine)
+
+    # get list of years
+    years_query = (session
+                   .query(func.strftime('%Y', Events.BEGIN_TIMESTAMP, 'unixepoch'))
+                   .distinct()
+                   .all()
+                   )
+    
+    # get list of states
+    states_query = (session
+                    .query(Counties.STATE)
+                    .distinct()
+                    .all()
+                    )
+    
+    # close session
+    session.close()
+
+    # ---------------------------
+    # Convert each db result
+    # ---------------------------
+    years = [int(year[0]) for year in years_query]
+    states = [state[0] for state in states_query]
+
+    # sort result
+    years.sort()
+    states.sort()
+
+    # ---------------------------
+    # Setup full response
+    # ---------------------------
+    result = {
+        'years': years,
+        'states': states
+    }
+
+    # return result
+    return jsonify(result)
+
 # run local server with the app
 if __name__ == '__main__':
     app.run(debug=True)
