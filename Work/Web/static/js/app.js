@@ -19,7 +19,7 @@ const countyDropdown = document.getElementById('countyDropdown');
 
 // for visualizations
 const durationTable = document.getElementById('durationTable');
-
+const totalsTable = document.getElementById('totalsTable');
 
 /*****************************************
  * Populate drowpdown options function
@@ -139,15 +139,53 @@ function buildDurationTable(durationData) {
         <tbody>
             <tr>
                 <td>Total Hours</td>
-                <td>${durationData.total_hrs}</td>
+                <td>${durationData.total_hrs.toLocaleString()}</td>
             </tr>
             <tr>
                 <td>Avg Hours Per Event</td>
-                <td>${durationData.avg_hrs_per_event}</td>
+                <td>${durationData.avg_hrs_per_event.toLocaleString()}</td>
             </tr>
         </tbody>
     `;
     durationTable.innerHTML = html;
+}
+
+function buildTotalsTable(summaryData) {
+    // clear existing
+    totalsTable.innerHTML = '';
+
+    // create name per key
+    const rowMap = {
+        events: 'Events',
+        deaths: 'Deaths',
+        injuries: 'Injuries',
+        damaged_crops: 'Damaged Crops ($)',
+        damaged_property: 'Damaged Property ($)'
+    };
+
+    // build table
+    let html = `
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    for (let key in rowMap) {
+        const label = rowMap[key];
+        // grabbing total value
+        const totalValue = summaryData[key]?.total ?? 0;
+        html += `
+            <tr>
+                <td>${label}</td>
+                <td>${totalValue.toLocaleString()}</td>
+            </tr>
+        `
+    }
+    html += '</tbody>';
+    totalsTable.innerHTML = html;
 }
 
 /*****************************************
@@ -205,8 +243,9 @@ function refreshDashboard(forceYear, forceDuration) {
         // console log api data
         console.log('API data:', data);
 
-        // build table
+        // build visualizations
         buildDurationTable(data.duration_table);
+        buildTotalsTable(data.summary_table);
     })
     .catch((err) => console.error(err));
 }
