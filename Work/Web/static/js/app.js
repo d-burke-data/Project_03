@@ -20,6 +20,7 @@ const countyDropdown = document.getElementById('countyDropdown');
 // for visualizations
 const durationTable = document.getElementById('durationTable');
 const totalsTable = document.getElementById('totalsTable');
+const monthlyEventsChart = document.getElementById('monthlyEventsChart');
 
 /*****************************************
  * Populate drowpdown options function
@@ -188,6 +189,27 @@ function buildTotalsTable(summaryData) {
     totalsTable.innerHTML = html;
 }
 
+function buildMonthlyEventsChart(monthlyEventsData) {
+    // create x axis labels (YYYY-MM) and y axis counts arrays
+    let xValues = monthlyEventsData.map((item) => `${item.year}-${item.month}`);
+    let yValues = monthlyEventsData.map((item) => item.count);
+
+    // setup trace
+    let trace = {
+        x: xValues,
+        y: yValues,
+        type: 'bar'
+    };
+
+    // define layout
+    let layout = {
+        yaxis: {title: 'Event Count'}
+    };
+
+    // plot chart
+    Plotly.newPlot(monthlyEventsChart, [trace], layout);
+}
+
 /*****************************************
  * Initialize/refresh dashboard function
  *****************************************/
@@ -246,6 +268,7 @@ function refreshDashboard(forceYear, forceDuration) {
         // build visualizations
         buildDurationTable(data.duration_table);
         buildTotalsTable(data.summary_table);
+        buildMonthlyEventsChart(data.monthly_events_chart);
     })
     .catch((err) => console.error(err));
 }
