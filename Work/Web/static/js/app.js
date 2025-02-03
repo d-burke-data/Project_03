@@ -127,7 +127,7 @@ dashboardForm.addEventListener('submit', function (event) {
 
     // validate required fields
     if (!startYear || !duration) {
-        alert('Please select a start year or duration');
+        alert('Please select BOTH start year and duration :)');
         return;
     }
 
