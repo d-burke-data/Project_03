@@ -356,13 +356,27 @@ function buildPieChart(scaleData) {
     let labels = scaleData.map((entry) => entry.scale);
     let values = scaleData.map((entry) => entry.count);
 
+    // Set colors
+    let colorMap = {
+        "EF0/F0": "#00FFFF", // CYAN
+        "EF1/F1": "#00FF00", // GREEN
+        "EF2/F2": "#FFFF00", // YELLOW
+        "EF3/F3": "#FFA500", // ORANGE
+        "EF4/F4": "#FF0000", // RED
+        "EFU/FU": "#D3D3D3"  // GRAY
+    };
+
+    // Assign colors by labels
+    let colors = labels.map(label => colorMap[label]); 
+       
     // Create Pie Chart Data
     let pieData = [{
         labels: labels,
         values: values,
         type: 'pie',
         textinfo: 'label+percent',
-        insidetextorientation: 'radial'
+        insidetextorientation: 'radial',
+        marker: {colors: colors}
     }];
 
     // Define Layout
