@@ -14,9 +14,16 @@ let layerControl;  //for toggling overlays
 
 let countyLayer;  //county heatmap layer
 let eventsLayer;  //marker layer for events
+let heatLayer;  // heatmap layer for events
 let usCountiesGeoJSON;  //loaded county boundaries
 
+// events data
 let eventsDataFetched = false;  //track if we've fetched events data
+let allEventsData = null;  //store all events data globally
+
+// flags to check if each extra map layer is already built
+let eventsLayerBuilt = false;
+let eventsHeatLayerBuilt = false;
 
 // store references for events marker arrays 
 let beginMarkers = [];
@@ -117,17 +124,21 @@ function initMap() {
     eventsLayer = L.layerGroup();
     layerControl.addOverlay(eventsLayer, 'Events');
 
-    // listen for overlay toggles
+    // create an empty heat layer and add it as a overlay toggle option
+    heatLayer = L.layerGroup();
+    layerControl.addOverlay(heatLayer, 'Heatmap');
+
+    // listen for overlay toggles --> event data fetch doesn't happen until this
     map.on('overlayadd', function(e) {
         //user toggled on 'Events' overlay
         if (e.name === 'Events') {
-            // user toggled Events overlay
-            if (!eventsDataFetched) {
-                // fetch big data once
-                fetchEventsData();
-            }
+          getEventsData().then(data => buildEventsLayer(data));  //only builds layer once
         }
-    });
+        // user toggled on 'Heatmap' overlay
+        if (e.name === 'Heatmap') {
+          getEventsData().then(data => buildEventsHeatLayer(data));  //only builds layer once
+        }
+      });
 }
 
 /**********************************************
@@ -286,7 +297,10 @@ function getColor(count) {
 // events layer map
 function buildEventsLayer(eventsData) {
 
-    // Clear old
+    // if we already built this layer, do nothing
+    if (eventsLayerBuilt) return;
+
+    // Clear old or create new if it doesn't exist
     eventsLayer.clearLayers();
     beginMarkers = [];
     endMarkers = [];
@@ -352,6 +366,9 @@ function buildEventsLayer(eventsData) {
     // add both to eventsLayer
     eventsLayer.addLayer(beginLayerGroup);
     eventsLayer.addLayer(endLayerGroup);
+
+    // track that this layer is now built
+    eventsLayerBuilt = true;
   
     // Attach zoom handler for resizing
     map.on("zoomend", markersZoom);
@@ -470,6 +487,45 @@ function formatRAP(range, azimuth, location) {
     }
 }
 
+/*****************************************
+ * Heat Events Map: Function
+ *****************************************/
+function buildEventsHeatLayer(eventsData) {
+    // do nothing if layer already built
+    if (eventsHeatLayerBuilt) return;
+
+    // clear old or create new if it doesn't exits
+    heatLayer.clearLayers();
+
+    // filter/map data for leaflet.heat
+    let heatData = eventsData
+        .filter(entry => entry.END_LAT && entry.END_LON)
+        .map(entry => ([
+            parseFloat(entry.END_LAT),
+            parseFloat(entry.END_LON),
+            1  //intensity
+        ]));
+    
+    // Create and add the heatmap layer
+    let eventsHeatSubLayer = L.heatLayer(heatData, {
+        radius: 25, 
+        blur: 15,
+        minOpacity: 0.3,    
+        maxZoom: 17
+        // gradient: {
+        //     0.1: 'blue',
+        //     0.4: 'lime',
+        //     0.7: 'orange',
+        //     1.0: 'red'
+        // }  
+    });
+
+    // add to our group
+    heatLayer.addLayer(eventsHeatSubLayer);
+
+    // mark as built
+    eventsHeatLayerBuilt = true;
+}
 
 /*****************************************
  * Functions to build visualizations/tables
@@ -598,9 +654,9 @@ function buildMonthlyEventsChart(monthlyEventsData) {
     Plotly.newPlot(monthlyEventsChart, [trace], layout, {responsive: true});
 }
 
-/*****************************************
+/**********************************************
  * Build api url function
- *****************************************/
+ *********************************************/
 function buildApiUrl(url) {
 
     // collect values
@@ -659,6 +715,11 @@ function refreshDashboard(forceYear, forceDuration) {
     let finalURL = buildApiUrl(dashboardURL);
     console.log('Dashboard URL:', finalURL);
 
+    /*****************************************
+     * Reset the events data so it will fetch again
+     *****************************************/
+    allEventsData = null;
+    eventsDataFetched = false;
 
     /*****************************************
      * Force turning off 'Events' overlay if on
@@ -667,14 +728,22 @@ function refreshDashboard(forceYear, forceDuration) {
         // visually uncheck control
         map.removeLayer(eventsLayer);
     }
+    
+    // clear/reset build flag
+    eventsLayer.clearLayers();
+    eventsLayerBuilt = false;
 
-    // remove overlay from layerControl to readd
-    layerControl.removeLayer(eventsLayer);
-
-    // recreate empty eventsLayer
-    eventsLayer = L.layerGroup();
-    layerControl.addOverlay(eventsLayer, 'Events');
-    eventsDataFetched = false;
+    /*****************************************
+     * Force turning off 'Heatmap' overlay if on
+     *****************************************/
+    if (map.hasLayer(heatLayer)) {
+        // visually uncheck control
+        map.removeLayer(heatLayer);
+    }
+    
+    // clear/reset build flag
+    heatLayer.clearLayers();
+    eventsHeatLayerBuilt = false;
 
     /*****************************************
      * Build visualizations/tables
@@ -714,17 +783,23 @@ dashboardForm.addEventListener('submit', function (event) {
 * Fetch events data
 *****************************************/
 // fetch events api route data
-function fetchEventsData() {
+function getEventsData() {
 
-    // build api url for events data
+    // if data is already fetched, return it
+    if (allEventsData) {
+        return Promise.resolve(allEventsData);
+    }
+
+    // otherwise, build api url for events
     let finalURL = buildApiUrl(eventsURL);
     console.log("Fetching events from:", finalURL);
-  
-    d3.json(finalURL)
-      .then((data) => {
-        console.log("Events data:", data.length, "records");
-        buildEventsLayer(data);
-        eventsDataFetched = true;
-      })
-      .catch((err) => console.error(err));
+    
+    // fetch data
+    return d3.json(finalURL).then(data => {
+        console.log('Events data fetched:', data.length, 'records');
+        allEventsData = data;  //store in global
+        eventsDataFetched = true;  //mark as fetched
+        return data;  // return data
+    })
+    .catch((err) => {console.error('Error fetching events data:', err)});
   }
