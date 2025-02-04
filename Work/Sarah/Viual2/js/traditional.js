@@ -19,6 +19,7 @@ let api_url = "https://bmitri.pythonanywhere.com/api/v1.0/events?start_year=2024
 d3.json(api_url).then(function(Data) {  // Use "Data" here, as that is what you named the variable
     console.log(Data);
 
+
     //  END_LAT and END_LON from api
     let heatData = Data.map(entry => [
         parseFloat(entry.END_LAT),
@@ -28,9 +29,18 @@ d3.json(api_url).then(function(Data) {  // Use "Data" here, as that is what you 
 
     // Create and add the heatmap layer
     L.heatLayer(heatData, {
-        radius: 25, 
-        blur: 15,    
-        maxZoom: 17  
+        radius: 20, 
+        blur: 5,
+        minOpacity: 0.5,      
+        maxZoom: 17,  
+        // gradient: {
+        //     0.2: 'blue',     //least affected area
+        //     0.4: 'yellow',
+        //     0.6: 'orange',
+        //     1.0: 'red'        //hot stop area
+        // }
+
+
     }).addTo(map);
 
 
