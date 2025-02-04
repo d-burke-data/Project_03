@@ -291,7 +291,11 @@ function buildCountyHeatmap(countyHeatMapData) {
             let count = lookup[fip] || 0;
             let countyName = countyLookup[fip] || "";
             let stateName = stateLookup[fip] || "";
-            layer.bindPopup(`${countyName}, ${stateName}<br>${count} Events`);
+            let comma = "";
+            if (countyName === "" || stateName === "")
+                comma = "";
+
+            layer.bindPopup(`${countyName}${comma}${stateName}<br>${count} Events`);
         }
     });
 
