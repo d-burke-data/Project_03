@@ -18,6 +18,7 @@ const stateDropdown = document.getElementById('stateDropdown');
 const countyDropdown = document.getElementById('countyDropdown');
 
 // for visualizations
+const heatmapDiv = document.getElementById('heatmap');
 const durationTable = document.getElementById('durationTable');
 const totalsTable = document.getElementById('totalsTable');
 const scalePieChart = document.getElementById('scalePieChart');
@@ -67,9 +68,39 @@ function populateCountyDropdown(selectElement, items, placeholder) {
 }
 
 /**********************************************
+ * Initialize heatmap function
+ *********************************************/
+// leaflet variables
+let map;  //map instance
+let countyLayer;  //curent GeoJSON layer
+let usCountiesGeoJSON;  //loaded county boundaries
+
+function initMap() {
+    // create map in heatmapDiv centered on US (zoom 4)
+    map = L.map('heatmap').setView([37.8, -96], 4);
+
+    // add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: "© OpenStreetMap contributors"
+    }).addTo(map);
+}
+
+/**********************************************
  * Initialize dash/Fetch options (on page load)
  *********************************************/
 window.addEventListener('DOMContentLoaded', () => {
+    // initialize Leaflet map
+    initMap();
+
+    // fetch county GeoJSON
+    fetch('./static/js/data/geojson-counties-fips.json')
+        .then((res) => res.json())
+        .then((geoData) => {
+            // store geoJSON globally
+            usCountiesGeoJSON = geoData;
+        })
+        .catch((err) => console.error('Error fetching GeoJSON:', err));
+    
     // fetch options route for years and states
     fetch(optionsURL)
         .then((res) => res.json())
@@ -126,6 +157,54 @@ stateDropdown.addEventListener('change', () => {
 /*****************************************
  * Functions to build visualizations/tables
  *****************************************/
+function buildHeatmap(countyHeatMapData) {
+    // build lookup from dashbaord api call data
+    let lookup = {};
+    countyHeatMapData.forEach((item) => {
+        lookup[item.fip] = item.count;
+    });
+
+    // remove old layer if there
+    if (countyLayer) {
+        map.removeLayer(countyLayer);
+    }
+
+    // create a new GeoJSON layer
+    countyLayer = L.geoJSON(usCountiesGeoJSON, {
+        style: function(feature) {
+            let fip = feature.id;
+            let count = lookup[fip] || 0; //get 0 if not found
+            return {
+                fillColor: getColor(count),
+                color: '#999',
+                weight: 1,
+                fillOpacity: 0.7
+            };
+        },
+        onEachFeature: function(feature, layer) {
+            // define popups
+            let fip = feature.id;
+            let count = lookup[fip] || 0;
+            layer.bindPopup(`Count: ${count}`);
+        }
+    });
+
+    // add layer to map
+    countyLayer.addTo(map);
+
+}
+
+// heatmap color scale
+function getColor(count) {
+    // breakpoints
+    if (count > 20) return "#800026";
+    if (count > 10) return "#BD0026";
+    if (count > 5)  return "#E31A1C";
+    if (count > 2)  return "#FC4E2A";
+    if (count > 0)  return "#FD8D3C";
+    return "#EEEEE";
+}
+
 function buildDurationTable(durationData) {
     // clear existing
     durationTable.innerHTML = '';
@@ -292,6 +371,7 @@ function refreshDashboard(forceYear, forceDuration) {
         console.log('API data:', data);
 
         // build visualizations
+        buildHeatmap(data.county_heatmap);
         buildDurationTable(data.duration_table);
         buildTotalsTable(data.summary_table);
         buildPieChart(data.scale_pie);
