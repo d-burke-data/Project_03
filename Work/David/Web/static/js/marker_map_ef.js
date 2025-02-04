@@ -30,22 +30,22 @@ let view = {
 };
 
 let baseMaps = {
-    "Street": street
+    "Street": street,
     // "Topographic": topo
 };
 
-let beginMarkers = [];
+// let beginMarkers = [];
 let endMarkers = [];
 
-// let beginMarkers = {
-//     "U": [],
-//     "0": [],
-//     "1": [],
-//     "2": [],
-//     "3": [],
-//     "4": [],
-//     "5": []
-// };
+let beginMarkers = {
+    "U": [],
+    "0": [],
+    "1": [],
+    "2": [],
+    "3": [],
+    "4": [],
+    "5": []
+};
 
 // let endMarkers = {
 //     "U": [],
@@ -60,10 +60,10 @@ let endMarkers = [];
 let beginLayerGroup = L.layerGroup();
 let endLayerGroup = L.layerGroup();
 
-let overlays = {
-    "Begin Points": beginLayerGroup,
-    "End Points": endLayerGroup
-}
+// let overlays = {
+//     "Begin Points": beginLayerGroup,
+//     "End Points": endLayerGroup
+// }
 
 let tornadoMap = L.map("map", {
     center: view.center,
@@ -71,9 +71,9 @@ let tornadoMap = L.map("map", {
     layers: [street]
 });
 
-// let mapLayerControl = L.control.layers(baseMaps, null, {
-//     collapsed: true
-// }).addTo(tornadoMap);
+let mapLayerControl = L.control.layers(baseMaps, null, {
+    collapsed: true
+}).addTo(tornadoMap);
 
 tornadoMap.on("zoomend", markersZoom);
 populateMap();
@@ -150,8 +150,8 @@ function populateMap() {
                     maxWidth: 650,
                     maxHeight: 400
                 });
-                beginMarkers.push(beginMarker);
-                // beginMarkers[tornado.TOR_F_LEVEL].push(beginMarker);
+                // beginMarkers.push(beginMarker);
+                beginMarkers[tornado.TOR_F_LEVEL].push(beginMarker);
     
                 if (tornado.END_LAT) {
                     let endCoordinates = [tornado.END_LAT, tornado.END_LON];
@@ -202,18 +202,23 @@ function populateMap() {
         tornadoMap.removeLayer(beginLayerGroup);
         tornadoMap.removeLayer(endLayerGroup);
 
-        beginLayerGroup = L.layerGroup(beginMarkers);
+        // beginLayerGroup = L.layerGroup(beginMarkers);
         endLayerGroup = L.layerGroup(endMarkers);
-        // beginLayerGroup = L.layerGroup();
+        beginLayerGroup = L.layerGroup(beginMarkers["1"]);
+        beginLayerGroup.addLayer(beginMarkers["U"]);
         // endLayerGroup = L.layerGroup();
 
         // for (let i = 0; i < EFscale.length; i++) {
         //     let ef = EFscale[i];
+        //     console.log(ef);
+        //     console.log(beginMarkers[ef]);
         //     if (beginMarkers[ef].length > 0)
         //         beginLayerGroup.addLayer(beginMarkers[ef]);
-        //     if (endMarkers[ef].length > 0)
-        //         endLayerGroup.addLayer(endMarkers[ef]);
+        //     // if (endMarkers[ef].length > 0)
+        //     //     endLayerGroup.addLayer(endMarkers[ef]);
         // }
+
+        // beginLayerGroup.addTo(tornadoMap);
 
         tornadoMap.addLayer(beginLayerGroup);
         tornadoMap.addLayer(endLayerGroup);
@@ -306,8 +311,8 @@ function createPopup(tornado, isBegin) {
         <br>Width: ${tornado.TOR_WIDTH} yards
         <hr>Deaths: ${tornado.DEATHS}
         <br>Injuries: ${tornado.INJURIES}
-        <br>Property Damage: $${tornado.DAMAGE_PROPERTY.toLocaleString()}
-        <br>Crop Damage: $${tornado.DAMAGE_CROPS.toLocaleString()}`
+        <br>Property Damage: $${tornado.DAMAGE_PROPERTY}
+        <br>Crop Damage: $${tornado.DAMAGE_CROPS}`
 
     if (tornado.EVENT_NARRATIVE) {
         text += `<hr>${tornado.EVENT_NARRATIVE}`;        

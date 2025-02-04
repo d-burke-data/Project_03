@@ -3,6 +3,8 @@
 
 let eventMapURL = baseURL + 'events';
 
+let EFscale = ["U", "0", "1", "2", "3", "4", "5"];
+
 let colorScale = {
     "U": "white",
     "0": "cyan",
@@ -17,9 +19,9 @@ let street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 });
 
-let topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-    attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-});
+// let topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+//     attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+// });
 
 let view = {
     center: [37.09, -95.71],
@@ -28,12 +30,33 @@ let view = {
 };
 
 let baseMaps = {
-    "Street": street,
-    "Topographic": topo
+    "Street": street
+    // "Topographic": topo
 };
 
 let beginMarkers = [];
 let endMarkers = [];
+
+// let beginMarkers = {
+//     "U": [],
+//     "0": [],
+//     "1": [],
+//     "2": [],
+//     "3": [],
+//     "4": [],
+//     "5": []
+// };
+
+// let endMarkers = {
+//     "U": [],
+//     "0": [],
+//     "1": [],
+//     "2": [],
+//     "3": [],
+//     "4": [],
+//     "5": []
+// };
+
 let beginLayerGroup = L.layerGroup();
 let endLayerGroup = L.layerGroup();
 
@@ -45,12 +68,12 @@ let overlays = {
 let tornadoMap = L.map("map", {
     center: view.center,
     zoom: view.zoom,
-    layers: [street, beginLayerGroup, endLayerGroup]
+    layers: [street]
 });
 
-L.control.layers(baseMaps, null, {
-    collapsed: true
-}).addTo(tornadoMap);
+// let mapLayerControl = L.control.layers(baseMaps, null, {
+//     collapsed: true
+// }).addTo(tornadoMap);
 
 tornadoMap.on("zoomend", markersZoom);
 populateMap();
@@ -107,12 +130,14 @@ function populateMap() {
     d3.json(finalURL).then(response => {
         beginMarkers.length = 0;
         endMarkers.length = 0;
+        // resetMarkers();
+
         for (let i = 0; i < response.length; i++) {
             let tornado = response[i];
             if (tornado.BEGIN_LAT) {
                 let color = colorScale[tornado.TOR_F_LEVEL];
-                let begin_coordinates = [tornado.BEGIN_LAT, tornado.BEGIN_LON];                
-                let begin_marker = L.shapeMarker(begin_coordinates, {
+                let beginCoordinates = [tornado.BEGIN_LAT, tornado.BEGIN_LON];                
+                let beginMarker = L.shapeMarker(beginCoordinates, {
                     title: `${tornado.TOR_F_SCALE} Begin Point`,
                     zIndexOffset: 100,
                     shape: "triangle-down",
@@ -125,12 +150,13 @@ function populateMap() {
                     maxWidth: 650,
                     maxHeight: 400
                 });
-                beginMarkers.push(begin_marker);
+                beginMarkers.push(beginMarker);
+                // beginMarkers[tornado.TOR_F_LEVEL].push(beginMarker);
     
                 if (tornado.END_LAT) {
-                    let end_coordinates = [tornado.END_LAT, tornado.END_LON];
-                    if (begin_coordinates != end_coordinates) {
-                        let end_marker = L.shapeMarker(end_coordinates, {
+                    let endCoordinates = [tornado.END_LAT, tornado.END_LON];
+                    if (beginCoordinates != endCoordinates) {
+                        let endMarker = L.shapeMarker(endCoordinates, {
                             title: `${tornado.TOR_F_SCALE} End Point`,
                             zIndexOffset: -100,
                             shape: "square",
@@ -143,14 +169,15 @@ function populateMap() {
                             maxWidth: 650,
                             maxHeight: 400
                         });
-                        endMarkers.push(end_marker);
+                        endMarkers.push(endMarker);
+                        // endMarkers[tornado.TOR_F_LEVEL].push(endMarker);
         
                         // Calculate size & frequency based on tornado length?
                         let pathMarkerFrequency = 10;
                         let pathMarkerSize = "10%";
         
                         // Path between BEGIN and END points
-                        let tornado_path = L.polyline([
+                        let tornadoPath = L.polyline([
                             [tornado.BEGIN_LAT, tornado.BEGIN_LON],
                             [tornado.END_LAT, tornado.END_LON]
                         ], {
@@ -165,60 +192,44 @@ function populateMap() {
                             fill: true,                        
                             fillColor: color
                         });
-                        endMarkers.push(tornado_path);
+                        endMarkers.push(tornadoPath);
+                        // endMarkers[tornado.TOR_F_LEVEL].push(tornadoPath);
                     }
                 }
             }
         }
-    
-        // let beginLayerGroup = L.layerGroup(beginMarkers);
-        // let endLayerGroup = L.layerGroup(endMarkers);
-    
-        // let overlays = {
-        //     "Begin Points": beginLayerGroup,
-        //     "End Points": endLayerGroup
-        // };
-
-        // Remove existing overlays
-        // eventMapLayers.array.forEach(element => {
-        //     tornadoMap.removeLayer(eventMapLayers.pop(element));
-        // });
-
-        // beginLayerGroup.clearLayers();
-        // endLayerGroup.clearLayers();
 
         tornadoMap.removeLayer(beginLayerGroup);
-        tornadoMap.removeLayer(endLayerGroup);        
+        tornadoMap.removeLayer(endLayerGroup);
 
-        // beginLayerGroup.addLayer(beginMarkers);
         beginLayerGroup = L.layerGroup(beginMarkers);
-        // endLayerGroup.addLayer(endMarkers);
         endLayerGroup = L.layerGroup(endMarkers);
+        // beginLayerGroup = L.layerGroup();
+        // endLayerGroup = L.layerGroup();
+
+        // for (let i = 0; i < EFscale.length; i++) {
+        //     let ef = EFscale[i];
+        //     if (beginMarkers[ef].length > 0)
+        //         beginLayerGroup.addLayer(beginMarkers[ef]);
+        //     if (endMarkers[ef].length > 0)
+        //         endLayerGroup.addLayer(endMarkers[ef]);
+        // }
 
         tornadoMap.addLayer(beginLayerGroup);
         tornadoMap.addLayer(endLayerGroup);
 
-        markersZoom();
-
-        // Add new overlays
-        // tornadoMap.addLayer(endLayerGroup);
-        // eventMapLayers.push(endLayerGroup);
-        // tornadoMap.addLayer(beginLayerGroup);
-        // eventMapLayers.push(beginLayerGroup);       
-
-        // L.control.layers(overlays, {
-        //     collapsed: true
-        // }).addTo(tornadoMap);
-    
-        // tornadoMap = L.map("map", {
-        //     center: view.center,
-        //     zoom: view.zoom,
-        //     layers: [street, beginLayerGroup]
-        // });
-
-        
+        markersZoom();        
     });
 }
+
+function resetMarkers() {
+    for (let i = 0; i < EFscale.length; i++) {
+        let element = EFscale[i];
+        console.log(element);
+        beginMarkers[element].length = 0;
+        endMarkers[element].length = 0;
+    }
+ }
 
 function markersZoom() {
         // console.log(tornadoMap.getZoom());
@@ -232,16 +243,22 @@ function markersZoom() {
             if (!tornadoMap.hasLayer(endLayerGroup))
                 tornadoMap.addLayer(endLayerGroup);
         }
+
+        // for (let i = 0; i < EFscale.length; i++) {
+        //     let element = EFscale[i];
+        //     resizeMarkers(element);
+        // }
         resizeMarkers();
 }
 
+// function resizeMarkers(fScale) {
 function resizeMarkers() {
     beginMarkers.forEach(element => {
         element.setRadius(getMarkerSize(tornadoMap.getZoom(), true));
     });
     for (let i = 0; i < endMarkers.length; i++) {
         let element = endMarkers[i];
-        if ((i % 2) == 0) {
+        if ((i % 2) === 0) {
             // This is a marker
             element.setRadius(getMarkerSize(tornadoMap.getZoom(), false));
         }
@@ -259,17 +276,16 @@ function getMarkerSize(currentZoom, isBegin) {
     return currentZoom * multiplier;
 }
 
-function createPopup(tornado, is_begin) {
+function createPopup(tornado, isBegin) {
     let text = "";
     let mileText = "mile";
 
-    if (is_begin) {
+    if (isBegin) {
         let timestamp = Number(tornado.BEGIN_TIMESTAMP)
         let beginDate = new Date(timestamp * 1000).toUTCString();
         text +=
         `<h2>${tornado.TOR_F_SCALE} Tornado (Begin Point)</h2>
         ${formatRAP(tornado.BEGIN_RANGE, tornado.BEGIN_AZIMUTH, tornado.BEGIN_LOCATION)}, ${tornado.STATE}
-        <br>Timestamp: ${timestamp}
         <br>${beginDate}`;
     }
     else {
@@ -281,17 +297,17 @@ function createPopup(tornado, is_begin) {
         <br>${endDate}`;
     }
 
-    lngth = Number.parseFloat(tornado.TOR_LENGTH).toPrecision(2)
-    if (lngth != 1)
+    let length = Number.parseFloat(tornado.TOR_LENGTH).toPrecision(2)
+    if (length !== 1)
         mileText += "s";
 
     text +=
-        `<hr>Length: ${lngth} ${mileText}
+        `<hr>Length: ${length} ${mileText}
         <br>Width: ${tornado.TOR_WIDTH} yards
         <hr>Deaths: ${tornado.DEATHS}
         <br>Injuries: ${tornado.INJURIES}
-        <br>Property Damage: $${tornado.DAMAGE_PROPERTY}
-        <br>Crop Damage: $${tornado.DAMAGE_CROPS}`
+        <br>Property Damage: $${tornado.DAMAGE_PROPERTY.toLocaleString()}
+        <br>Crop Damage: $${tornado.DAMAGE_CROPS.toLocaleString()}`
 
     if (tornado.EVENT_NARRATIVE) {
         text += `<hr>${tornado.EVENT_NARRATIVE}`;        
@@ -306,7 +322,7 @@ function formatRAP(range, azimuth, location) {
 
     if (location) {
         if (range) {
-            if (range != 1)
+            if (range !== 1)
                 mileText += "s";
             text += `${range} ${mileText} `;
         }
@@ -320,6 +336,6 @@ function formatRAP(range, azimuth, location) {
         return text;
     }
     else {
-        return `Unknown Location`;
+        return `Unknown Relative Location`;
     }
 }
