@@ -7,6 +7,61 @@ const dashboardURL = baseURL + 'dashboard';
 // store entire counties
 let allCounties = [];
 
+// add dictionary for state
+const stateToFIPS = {
+    AL: "01",
+    AK: "02",
+    AZ: "04",
+    AR: "05",
+    CA: "06",
+    CO: "08",
+    CT: "09",
+    DE: "10",
+    DC: "11",
+    FL: "12",
+    GA: "13",
+    HI: "15",
+    ID: "16",
+    IL: "17",
+    IN: "18",
+    IA: "19",
+    KS: "20",
+    KY: "21",
+    LA: "22",
+    ME: "23",
+    MD: "24",
+    MA: "25",
+    MI: "26",
+    MN: "27",
+    MS: "28",
+    MO: "29",
+    MT: "30",
+    NE: "31",
+    NV: "32",
+    NH: "33",
+    NJ: "34",
+    NM: "35",
+    NY: "36",
+    NC: "37",
+    ND: "38",
+    OH: "39",
+    OK: "40",
+    OR: "41",
+    PA: "42",
+    RI: "44",
+    SC: "45",
+    SD: "46",
+    TN: "47",
+    TX: "48",
+    UT: "49",
+    VT: "50",
+    VA: "51",
+    WA: "53",
+    WV: "54",
+    WI: "55",
+    WY: "56"
+  };
+
 /*****************************************
  * DOM References
  *****************************************/
@@ -18,6 +73,7 @@ const stateDropdown = document.getElementById('stateDropdown');
 const countyDropdown = document.getElementById('countyDropdown');
 
 // for visualizations
+const heatmapDiv = document.getElementById('heatmap');
 const durationTable = document.getElementById('durationTable');
 const totalsTable = document.getElementById('totalsTable');
 const scalePieChart = document.getElementById('scalePieChart');
@@ -32,14 +88,14 @@ function populateDropdown(selectElement, items, placeholder) {
     selectElement.innerHTML = '';
 
     // add placeholder option
-    const placeholderOption = document.createElement('option');
+    let placeholderOption = document.createElement('option');
     placeholderOption.value = '';
     placeholderOption.textContent = placeholder;
     selectElement.appendChild(placeholderOption);
 
     // add dropdown options
     items.forEach((item) => {
-        const option = document.createElement('option');
+        let option = document.createElement('option');
         option.value = item;
         option.textContent = item;
         selectElement.appendChild(option);
@@ -52,14 +108,14 @@ function populateCountyDropdown(selectElement, items, placeholder) {
     selectElement.innerHTML = '';
 
     // add placeholder option
-    const placeholderOption = document.createElement('option');
+    let placeholderOption = document.createElement('option');
     placeholderOption.value = '';
     placeholderOption.textContent = placeholder;
     selectElement.appendChild(placeholderOption);
 
     // add each county
     items.forEach((item) => {
-        const option = document.createElement('option');
+        let option = document.createElement('option');
         option.value = item.FIPS;  //fips code (hidden value)
         option.textContent = item.COUNTYNAME;  //display name
         selectElement.appendChild(option);
@@ -67,9 +123,66 @@ function populateCountyDropdown(selectElement, items, placeholder) {
 }
 
 /**********************************************
+ * Initialize heatmap function
+ *********************************************/
+// leaflet variables
+let map;  //map instance
+let countyLayer;  //curent GeoJSON layer
+let usCountiesGeoJSON;  //loaded county boundaries
+
+function initMap() {
+    // create map in heatmapDiv centered on US (zoom 4)
+    map = L.map('map').setView([37.8, -96], 4);
+
+    // add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: "© OpenStreetMap contributors"
+    }).addTo(map);
+}
+
+/**********************************************
+ * Map zoom to state selection function
+ *********************************************/
+function zoomToState(numericStateCode) {
+    if(!numericStateCode) {
+        // zoom to entire us if no match
+        map.setView([37.8, -96], 4);
+        return;
+    }
+
+    // filter features to just that one state
+    let matchingFeatures = usCountiesGeoJSON.features.filter((feature) => {
+        return feature.properties.STATE == numericStateCode;
+    });
+
+    if (matchingFeatures.length == 0) {
+        // zoom to entire us if no match
+        map.setView([37.8, -96], 4);
+        return;
+    }
+
+    // create temporary layer to get bounds
+    let tempLayer = L.geoJSON(matchingFeatures);
+    map.fitBounds(tempLayer.getBounds());
+    tempLayer.remove();
+}
+
+/**********************************************
  * Initialize dash/Fetch options (on page load)
  *********************************************/
 window.addEventListener('DOMContentLoaded', () => {
+    // initialize Leaflet map
+    initMap();
+
+    // fetch county GeoJSON
+    fetch('./static/js/data/geojson-counties-fips.json')
+        .then((res) => res.json())
+        .then((geoData) => {
+            // store geoJSON globally
+            usCountiesGeoJSON = geoData;
+        })
+        .catch((err) => console.error('Error fetching GeoJSON:', err));
+    
     // fetch options route for years and states
     fetch(optionsURL)
         .then((res) => res.json())
@@ -79,7 +192,7 @@ window.addEventListener('DOMContentLoaded', () => {
             populateDropdown(stateDropdown, data.states, 'Select...');
             
             // find latest year
-            const latestYear = Math.max(...data.years);
+            let latestYear = Math.max(...data.years);
 
             // initialize dashboard
             refreshDashboard(latestYear, 1);
@@ -106,7 +219,7 @@ window.addEventListener('DOMContentLoaded', () => {
  *****************************************/
 stateDropdown.addEventListener('change', () => {
     // capture selected state
-    const selectedState = stateDropdown.value;
+    let selectedState = stateDropdown.value;
     if (!selectedState) {
         // reset county dropdown if user cleared selection
         countyDropdown.innerHTML = "<option value=''>Select a State first...</option>";
@@ -114,7 +227,7 @@ stateDropdown.addEventListener('change', () => {
     }
 
     // filter counties based on state
-    const filtered = allCounties.filter(
+    let filtered = allCounties.filter(
         (c) => c.STATE == selectedState
     );
 
@@ -126,6 +239,54 @@ stateDropdown.addEventListener('change', () => {
 /*****************************************
  * Functions to build visualizations/tables
  *****************************************/
+function buildHeatmap(countyHeatMapData) {
+    // build lookup from dashbaord api call data
+    let lookup = {};
+    countyHeatMapData.forEach((item) => {
+        lookup[item.fip] = item.count;
+    });
+
+    // remove old layer if there
+    if (countyLayer) {
+        map.removeLayer(countyLayer);
+    }
+
+    // create a new GeoJSON layer
+    countyLayer = L.geoJSON(usCountiesGeoJSON, {
+        style: function(feature) {
+            let fip = feature.id;
+            let count = lookup[fip] || 0; //get 0 if not found
+            return {
+                fillColor: getColor(count),
+                color: '#999',
+                weight: 1,
+                fillOpacity: 0.7
+            };
+        },
+        onEachFeature: function(feature, layer) {
+            // define popups
+            let fip = feature.id;
+            let count = lookup[fip] || 0;
+            layer.bindPopup(`Count: ${count}`);
+        }
+    });
+
+    // add layer to map
+    countyLayer.addTo(map);
+
+}
+
+// heatmap color scale
+function getColor(count) {
+    // breakpoints
+    if (count > 20) return "#800026";
+    if (count > 10) return "#BD0026";
+    if (count > 5)  return "#E31A1C";
+    if (count > 2)  return "#FC4E2A";
+    if (count > 0)  return "#FD8D3C";
+    return "#EEEEE";
+}
+
 function buildDurationTable(durationData) {
     // clear existing
     durationTable.innerHTML = '';
@@ -157,7 +318,7 @@ function buildTotalsTable(summaryData) {
     totalsTable.innerHTML = '';
 
     // create name per key
-    const rowMap = {
+    let rowMap = {
         events: 'Events',
         deaths: 'Deaths',
         injuries: 'Injuries',
@@ -176,9 +337,9 @@ function buildTotalsTable(summaryData) {
         <tbody>
     `;
     for (let key in rowMap) {
-        const label = rowMap[key];
+        let label = rowMap[key];
         // grabbing total value
-        const totalValue = summaryData[key]?.total ?? 0;
+        let totalValue = summaryData[key]?.total ?? 0;
         html += `
             <tr>
                 <td>${label}</td>
@@ -195,13 +356,27 @@ function buildPieChart(scaleData) {
     let labels = scaleData.map((entry) => entry.scale);
     let values = scaleData.map((entry) => entry.count);
 
+    // Set colors
+    let colorMap = {
+        "EF0/F0": "#00FFFF", // CYAN
+        "EF1/F1": "#00FF00", // GREEN
+        "EF2/F2": "#FFFF00", // YELLOW
+        "EF3/F3": "#FFA500", // ORANGE
+        "EF4/F4": "#FF0000", // RED
+        "EFU/FU": "#D3D3D3"  // GRAY
+    };
+
+    // Assign colors by labels
+    let colors = labels.map(label => colorMap[label]); 
+       
     // Create Pie Chart Data
     let pieData = [{
         labels: labels,
         values: values,
         type: 'pie',
         textinfo: 'label+percent',
-        insidetextorientation: 'radial'
+        insidetextorientation: 'radial',
+        marker: {colors: colors}
     }];
 
     // Define Layout
@@ -253,10 +428,10 @@ function refreshDashboard(forceYear, forceDuration) {
     }
 
     // collect values
-    const startYear = startYearDropdown.value;
-    const duration = durationDropdown.value;
-    const state = stateDropdown.value;
-    const fip = countyDropdown.value;
+    let startYear = startYearDropdown.value;
+    let duration = durationDropdown.value;
+    let stateAbbr = stateDropdown.value;
+    let fip = countyDropdown.value;
 
     // validate required fields
     if (!startYear || !duration) {
@@ -272,8 +447,8 @@ function refreshDashboard(forceYear, forceDuration) {
     });
 
     // optional endpoints
-    if (state) {
-        params.append('state', state);
+    if (stateAbbr) {
+        params.append('state', stateAbbr);
     }
     if (fip) {
         params.append('fip', fip);
@@ -282,7 +457,6 @@ function refreshDashboard(forceYear, forceDuration) {
     // final API URL
     const finalURL = `${dashboardURL}?${params.toString()}`;
     console.log('Dashboard URL:', finalURL);
-    
 
     /*****************************************
      * Build visualizations/tables
@@ -292,7 +466,12 @@ function refreshDashboard(forceYear, forceDuration) {
         // console log api data
         console.log('API data:', data);
 
+        // zoom the map (if state is chosen)
+        let numericStateCode = stateToFIPS[stateAbbr];
+        zoomToState(numericStateCode);
+
         // build visualizations
+        buildHeatmap(data.county_heatmap);
         buildDurationTable(data.duration_table);
         buildTotalsTable(data.summary_table);
         buildPieChart(data.scale_pie);

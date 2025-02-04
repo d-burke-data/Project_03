@@ -55,6 +55,9 @@ const durationDropdown = document.getElementById('durationDropdown');
 const stateDropdown = document.getElementById('stateDropdown');
 const countyDropdown = document.getElementById('countyDropdown');
 
+// for "generating" message
+const generatingText = document.getElementById('generating-text');
+
 // for visualizations
 const heatmapDiv = document.getElementById('heatmap');
 const durationTable = document.getElementById('durationTable');
@@ -190,7 +193,7 @@ window.addEventListener('DOMContentLoaded', () => {
         .then((data) => {
             // populate start year and state dropdowns
             populateDropdown(startYearDropdown, data.years, 'Select...');
-            populateDropdown(stateDropdown, data.states, 'Select...');
+            populateDropdown(stateDropdown, data.states, 'All');
             
             // find latest year
             let latestYear = Math.max(...data.years);
@@ -223,7 +226,7 @@ stateDropdown.addEventListener('change', () => {
     let selectedState = stateDropdown.value;
     if (!selectedState) {
         // reset county dropdown if user cleared selection
-        countyDropdown.innerHTML = "<option value=''>Select a State first...</option>";
+        countyDropdown.innerHTML = "<option value=''>All</option>";
         return;
     }
 
@@ -233,7 +236,7 @@ stateDropdown.addEventListener('change', () => {
     );
 
     // convert to a list of just county names & populate dropdown
-    populateCountyDropdown(countyDropdown, filtered, 'Select...');
+    populateCountyDropdown(countyDropdown, filtered, 'All');
 
 });
 
@@ -260,7 +263,7 @@ function buildHeatmap(countyHeatMapData) {
             let fip = feature.id;
             let count = lookup[fip] || 0; //get 0 if not found
             return {
-                fillColor: getColor(count),
+                fillColor: getHeatmapColor(count),
                 color: '#999',
                 weight: 1,
                 fillOpacity: 0.7
@@ -281,7 +284,7 @@ function buildHeatmap(countyHeatMapData) {
 }
 
 // heatmap color scale
-function getColor(count) {
+function getHeatmapColor(count) {
     // breakpoints
     if (count > 20) return "#800026";
     if (count > 10) return "#BD0026";
@@ -324,7 +327,10 @@ function buildEventsLayer(eventsData) {
           weight: 1,
           fillColor: color,
           fillOpacity: 0.8
-        }).bindPopup(createPopup(tornado, true));
+        }).bindPopup(createPopup(tornado, true), {
+            maxWidth: 650,
+            maxHeight: 400
+        });
         beginMarkers.push(beginMarker);
   
         if (tornado.END_LAT) {
@@ -339,7 +345,10 @@ function buildEventsLayer(eventsData) {
               weight: 1,
               fillColor: color,
               fillOpacity: 0.8
-            }).bindPopup(createPopup(tornado, false));
+            }).bindPopup(createPopup(tornado, false), {
+                maxWidth: 650,
+                maxHeight: 400
+            });
             endMarkers.push(endMarker);
             
             // path
@@ -373,18 +382,18 @@ function buildEventsLayer(eventsData) {
     // Attach zoom handler for resizing
     map.on("zoomend", markersZoom);
     markersZoom();
-  }
+}
 
 // color scale for events
 let colorScale = {
-    "U": "white",
-    "0": "cyan",
-    "1": "green",
-    "2": "yellow",
-    "3": "orange",
-    "4": "red",
-    "5": "black"
-  };
+    "0": "#00FFFF", // CYAN
+    "1": "#00FF00", // GREEN
+    "2": "#FFFF00", // YELLOW
+    "3": "#FFA500", // ORANGE
+    "4": "#FF0000", // RED
+    "5": "#000000", // BLACK
+    "U": "#D3D3D3"  // GRAY
+};
 
 // functions for events layer
 function markersZoom() {
@@ -432,7 +441,6 @@ function createPopup(tornado, isBegin) {
         text +=
         `<h2>${tornado.TOR_F_SCALE} Tornado (Begin Point)</h2>
         ${formatRAP(tornado.BEGIN_RANGE, tornado.BEGIN_AZIMUTH, tornado.BEGIN_LOCATION)}, ${tornado.STATE}
-        <br>Timestamp: ${timestamp}
         <br>${beginDate}`;
     }
     else {
@@ -444,17 +452,17 @@ function createPopup(tornado, isBegin) {
         <br>${endDate}`;
     }
 
-    lngth = Number.parseFloat(tornado.TOR_LENGTH).toPrecision(2)
-    if (lngth != 1)
+    let length = Number.parseFloat(tornado.TOR_LENGTH).toPrecision(2)
+    if (length !== 1)
         mileText += "s";
 
     text +=
-        `<hr>Length: ${lngth} ${mileText}
+        `<hr>Length: ${length} ${mileText}
         <br>Width: ${tornado.TOR_WIDTH} yards
         <hr>Deaths: ${tornado.DEATHS}
         <br>Injuries: ${tornado.INJURIES}
-        <br>Property Damage: $${tornado.DAMAGE_PROPERTY}
-        <br>Crop Damage: $${tornado.DAMAGE_CROPS}`
+        <br>Property Damage: $${tornado.DAMAGE_PROPERTY.toLocaleString()}
+        <br>Crop Damage: $${tornado.DAMAGE_CROPS.toLocaleString()}`
 
     if (tornado.EVENT_NARRATIVE) {
         text += `<hr>${tornado.EVENT_NARRATIVE}`;        
@@ -469,7 +477,7 @@ function formatRAP(range, azimuth, location) {
 
     if (location) {
         if (range) {
-            if (range != 1)
+            if (range !== 1)
                 mileText += "s";
             text += `${range} ${mileText} `;
         }
@@ -483,7 +491,7 @@ function formatRAP(range, azimuth, location) {
         return text;
     }
     else {
-        return `Unknown Location`;
+        return `Unknown Relative Location`;
     }
 }
 
@@ -511,7 +519,7 @@ function buildEventsHeatLayer(eventsData) {
         radius: 25, 
         blur: 15,
         minOpacity: 0.3,    
-        maxZoom: 17
+        maxZoom: 10
         // gradient: {
         //     0.1: 'blue',
         //     0.4: 'lime',
@@ -544,12 +552,12 @@ function buildDurationTable(durationData) {
         </thead>
         <tbody>
             <tr>
-                <td>Total Hours</td>
-                <td>${durationData.total_hrs.toLocaleString()}</td>
+                <td>Total Time</td>
+                <td>${durationData.total_hrs.toLocaleString()} hours</td>
             </tr>
             <tr>
-                <td>Avg Hours Per Event</td>
-                <td>${durationData.avg_hrs_per_event.toLocaleString()}</td>
+                <td>Average Time Per Event</td>
+                <td>${(durationData.avg_hrs_per_event * 60).toLocaleString()} minutes</td>
             </tr>
         </tbody>
     `;
@@ -606,6 +614,7 @@ function buildPieChart(scaleData) {
         "EF2/F2": "#FFFF00", // YELLOW
         "EF3/F3": "#FFA500", // ORANGE
         "EF4/F4": "#FF0000", // RED
+        "EF5/F5": "#000000", // BLACK
         "EFU/FU": "#D3D3D3"  // GRAY
     };
 
@@ -763,6 +772,7 @@ function refreshDashboard(forceYear, forceDuration) {
         buildTotalsTable(data.summary_table);
         buildPieChart(data.scale_pie);
         buildMonthlyEventsChart(data.monthly_events_chart);
+        generatingMessage(false);
     })
     .catch((err) => console.error(err));
 }
@@ -771,7 +781,8 @@ function refreshDashboard(forceYear, forceDuration) {
  * Generate button
  *****************************************/
 dashboardForm.addEventListener('submit', function (event) {
-    
+    generatingMessage(true);
+
     // prevent page reload
     event.preventDefault();
 
@@ -791,6 +802,7 @@ function getEventsData() {
     }
 
     // otherwise, build api url for events
+    generatingMessage(true);
     let finalURL = buildApiUrl(eventsURL);
     console.log("Fetching events from:", finalURL);
     
@@ -799,7 +811,15 @@ function getEventsData() {
         console.log('Events data fetched:', data.length, 'records');
         allEventsData = data;  //store in global
         eventsDataFetched = true;  //mark as fetched
-        return data;  // return data
+        generatingMessage(false);
+        return data;  // return data        
     })
     .catch((err) => {console.error('Error fetching events data:', err)});
-  }
+}
+
+function generatingMessage(on) {
+    if (on)
+        generatingText.innerHTML = "<strong>Generating, please wait...</strong>";
+    else
+        generatingText.innerHTML = "";
+}

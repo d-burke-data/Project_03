@@ -13,6 +13,9 @@
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""/>
 
+    <!-- Dashboard CSS -->
+    <link rel="stylesheet" type="text/css" href="static/css/style.css"/>
+
     <title>U.S. Tornado Events Dashboard</title>
   </head>
   <body class="p-4">
@@ -23,7 +26,7 @@
       <form id="dashboardForm" class="row row-cols-lg-auto g-3 align-items-center">
       
         <!-- Start Year -->
-         <div class="col-auto">
+         <div class="col-auto pb-2">
           <label for="startYearDropdown" class="form-label">Start Year</label>
           <select id="startYearDropdown" class="form-select">
             <!-- Populate options with JS -->
@@ -32,7 +35,7 @@
          </div>
   
          <!-- Duration (Years) -->
-         <div class="col-auto">
+         <div class="col-auto pb-2">
           <label for="durationDropdown" class="form-label">Duration (Years)</label>
           <select id="durationDropdown" class="form-select">
             <!-- Hardcode via JS -->
@@ -41,7 +44,7 @@
          </div>
 
          <!-- State -->
-          <div class="col-auto">
+          <div class="col-auto pb-2">
             <label for="stateDropdown" class="form-label">State</label>
             <select id="stateDropdown" class="form-select">
               <!-- Populate options with JS -->
@@ -50,17 +53,18 @@
           </div>
 
           <!-- County -->
-           <div class="col-auto">
+           <div class="col-auto pb-2">
             <label for="countyDropdown" class="form-label">County</label>
             <select id="countyDropdown" class="form-select">
               <!-- Populate options with JS based on State input-->
-              <option value="">Select a State first...</option>
+              <option value="">All</option>
             </select>
            </div>
   
          <!-- Generate Button -->
-          <div class="col-auto align-self-end">
+          <div class="col-auto align-self-end pb-2">
             <button type="submit" class="btn btn-primary" id="generateBtn">Generate</button>
+            <span id="generating-text"><strong>Generating, please wait...</strong></span>
           </div>
       </form>
 

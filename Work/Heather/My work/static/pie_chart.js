@@ -18,6 +18,7 @@ function buildPieChart() {
           "EF2/F2": "#FFFF00", // YELLOW
           "EF3/F3": "#FFA500", // ORANGE
           "EF4/F4": "#FF0000", // RED
+          "EF5/F5": "#000000", // BLACK
           "EFU/FU": "#D3D3D3"  // GRAY
         };
 
