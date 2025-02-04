@@ -3,63 +3,39 @@ const baseURL = 'https://bmitri.pythonanywhere.com/api/v1.0/';
 const optionsURL = baseURL + 'options';
 const countiesURL = baseURL + 'counties';
 const dashboardURL = baseURL + 'dashboard';
+const eventsURL = baseURL + 'events';
 
 // store entire counties
 let allCounties = [];
 
+// map/leaflet variables
+let map;  //map instance
+let layerControl;  //for toggling overlays
+
+let countyLayer;  //county heatmap layer
+let eventsLayer;  //marker layer for events
+let usCountiesGeoJSON;  //loaded county boundaries
+
+let eventsDataFetched = false;  //track if we've fetched events data
+
+// store references for events marker arrays 
+let beginMarkers = [];
+let endMarkers = [];
+// layer groups to show/hid events markers
+let beginLayerGroup;
+let endLayerGroup;
+
+
 // add dictionary for state
 const stateToFIPS = {
-    AL: "01",
-    AK: "02",
-    AZ: "04",
-    AR: "05",
-    CA: "06",
-    CO: "08",
-    CT: "09",
-    DE: "10",
-    DC: "11",
-    FL: "12",
-    GA: "13",
-    HI: "15",
-    ID: "16",
-    IL: "17",
-    IN: "18",
-    IA: "19",
-    KS: "20",
-    KY: "21",
-    LA: "22",
-    ME: "23",
-    MD: "24",
-    MA: "25",
-    MI: "26",
-    MN: "27",
-    MS: "28",
-    MO: "29",
-    MT: "30",
-    NE: "31",
-    NV: "32",
-    NH: "33",
-    NJ: "34",
-    NM: "35",
-    NY: "36",
-    NC: "37",
-    ND: "38",
-    OH: "39",
-    OK: "40",
-    OR: "41",
-    PA: "42",
-    RI: "44",
-    SC: "45",
-    SD: "46",
-    TN: "47",
-    TX: "48",
-    UT: "49",
-    VT: "50",
-    VA: "51",
-    WA: "53",
-    WV: "54",
-    WI: "55",
-    WY: "56"
+    AL: '01', AK: '02', AZ: '04', AR: '05', CA: '06', CO: '08', CT: '09',
+    DE: '10', DC: '11', FL: '12', GA: '13', HI: '15', ID: '16', IL: '17',
+    IN: '18', IA: '19', KS: '20', KY: '21', LA: '22', ME: '23', MD: '24',
+    MA: '25', MI: '26', MN: '27', MS: '28', MO: '29', MT: '30', NE: '31',
+    NV: '32', NH: '33', NJ: '34', NM: '35', NY: '36', NC: '37', ND: '38',
+    OH: '39', OK: '40', OR: '41', PA: '42', RI: '44', SC: '45', SD: '46',
+    TN: '47', TX: '48', UT: '49', VT: '50', VA: '51', WA: '53', WV: '54',
+    WI: '55', WY: '56'
   };
 
 /*****************************************
@@ -125,11 +101,6 @@ function populateCountyDropdown(selectElement, items, placeholder) {
 /**********************************************
  * Initialize heatmap function
  *********************************************/
-// leaflet variables
-let map;  //map instance
-let countyLayer;  //curent GeoJSON layer
-let usCountiesGeoJSON;  //loaded county boundaries
-
 function initMap() {
     // create map in heatmapDiv centered on US (zoom 4)
     map = L.map('heatmap').setView([37.8, -96], 4);
@@ -138,6 +109,25 @@ function initMap() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: "© OpenStreetMap contributors"
     }).addTo(map);
+
+    // create layer control with no overlays yet
+    layerControl = L.control.layers(null, null, {collapsed: false}).addTo(map);
+
+    // create an empty events layer and add it as an overlay (as a toggle option)
+    eventsLayer = L.layerGroup();
+    layerControl.addOverlay(eventsLayer, 'Events');
+
+    // listen for overlay toggles
+    map.on('overlayadd', function(e) {
+        //user toggled on 'Events' overlay
+        if (e.name === 'Events') {
+            // user toggled Events overlay
+            if (!eventsDataFetched) {
+                // fetch big data once
+                fetchEventsData();
+            }
+        }
+    });
 }
 
 /**********************************************
@@ -237,8 +227,9 @@ stateDropdown.addEventListener('change', () => {
 });
 
 /*****************************************
- * Functions to build visualizations/tables
+ * Functions to build maps
  *****************************************/
+// county heatmap
 function buildHeatmap(countyHeatMapData) {
     // build lookup from dashbaord api call data
     let lookup = {};
@@ -249,6 +240,7 @@ function buildHeatmap(countyHeatMapData) {
     // remove old layer if there
     if (countyLayer) {
         map.removeLayer(countyLayer);
+        layerControl.removeLayer(countyLayer);
     }
 
     // create a new GeoJSON layer
@@ -267,12 +259,13 @@ function buildHeatmap(countyHeatMapData) {
             // define popups
             let fip = feature.id;
             let count = lookup[fip] || 0;
-            layer.bindPopup(`Count: ${count}`);
+            layer.bindPopup(`Events: ${count}`);
         }
     });
 
     // add layer to map
     countyLayer.addTo(map);
+    layerControl.addOverlay(countyLayer, 'Counties');
 
 }
 
@@ -287,6 +280,197 @@ function getColor(count) {
     return "#EEEEE";
 }
 
+// events layer map
+function buildEventsLayer(eventsData) {
+
+    // Clear old
+    eventsLayer.clearLayers();
+    beginMarkers = [];
+    endMarkers = [];
+
+    // recreate fresh layer groups
+    beginLayerGroup = L.layerGroup();
+    endLayerGroup = L.layerGroup();
+  
+    // build markers
+    for (let i = 0; i < eventsData.length; i++) {
+      let tornado = eventsData[i];
+      if (tornado.BEGIN_LAT) {
+        let color = colorScale[tornado.TOR_F_LEVEL];
+        let beginCoord = [tornado.BEGIN_LAT, tornado.BEGIN_LON];
+        let beginMarker = L.shapeMarker(beginCoord, {
+          title: `${tornado.TOR_F_SCALE} Begin Point`,
+          zIndexOffset: 100,
+          shape: "triangle-down",
+          radius: getMarkerSize(map.getZoom(), true),
+          color: "black",
+          weight: 1,
+          fillColor: color,
+          fillOpacity: 0.8
+        }).bindPopup(createPopup(tornado, true));
+        beginMarkers.push(beginMarker);
+  
+        if (tornado.END_LAT) {
+          let endCoord = [tornado.END_LAT, tornado.END_LON];
+          if (endCoord[0] !== beginCoord[0] || endCoord[1] !== beginCoord[1]) {
+            let endMarker = L.shapeMarker(endCoord, {
+              title: `${tornado.TOR_F_SCALE} End Point`,
+              zIndexOffset: -100,
+              shape: "square",
+              radius: getMarkerSize(map.getZoom(), false),
+              color: "black",
+              weight: 1,
+              fillColor: color,
+              fillOpacity: 0.8
+            }).bindPopup(createPopup(tornado, false));
+            endMarkers.push(endMarker);
+            
+            // path
+            let pathLine = L.polyline([beginCoord, endCoord], {
+              stroke: false,
+              color: color
+            }).arrowheads({
+              yawn: 40,
+              size: "10%",
+              frequency: 10,
+              fill: true,
+              fillColor: color
+            });
+            endMarkers.push(pathLine);
+          }
+        }
+      }
+    }
+    
+    // add markers to layer groups
+    beginLayerGroup = L.layerGroup(beginMarkers);
+    endLayerGroup = L.layerGroup(endMarkers);
+    
+    // add both to eventsLayer
+    eventsLayer.addLayer(beginLayerGroup);
+    eventsLayer.addLayer(endLayerGroup);
+  
+    // Attach zoom handler for resizing
+    map.on("zoomend", markersZoom);
+    markersZoom();
+  }
+
+// color scale for events
+let colorScale = {
+    "U": "white",
+    "0": "cyan",
+    "1": "green",
+    "2": "yellow",
+    "3": "orange",
+    "4": "red",
+    "5": "black"
+  };
+
+// functions for events layer
+function markersZoom() {
+  let z = map.getZoom();
+  // threshold if you want to hide end markers at low zoom
+  let threshold = 8;
+  
+  // Hide endLayerGroup if zoom < threshold
+  if (z < threshold) {
+    if (eventsLayer.hasLayer(endLayerGroup)) {
+      eventsLayer.removeLayer(endLayerGroup);
+    }
+  } else {
+    if (!eventsLayer.hasLayer(endLayerGroup)) {
+      eventsLayer.addLayer(endLayerGroup);
+    }
+  }
+
+  // resize markers
+  beginMarkers.forEach((mk) => {
+    mk.setRadius(getMarkerSize(z, true));
+  });
+
+  endMarkers.forEach((mk) => {
+    // if it's a shapeMarker the setradius
+    if (mk.options && mk.setRadius) {
+      mk.setRadius(getMarkerSize(z, false));
+    }
+  });
+}
+
+function getMarkerSize(zoom, isBegin) {
+    let multiplier = 0.5;
+    if (isBegin) multiplier *= 2;
+    return zoom * multiplier;
+  }
+
+function createPopup(tornado, isBegin) {
+    let text = "";
+    let mileText = "mile";
+
+    if (isBegin) {
+        let timestamp = Number(tornado.BEGIN_TIMESTAMP)
+        let beginDate = new Date(timestamp * 1000).toUTCString();
+        text +=
+        `<h2>${tornado.TOR_F_SCALE} Tornado (Begin Point)</h2>
+        ${formatRAP(tornado.BEGIN_RANGE, tornado.BEGIN_AZIMUTH, tornado.BEGIN_LOCATION)}, ${tornado.STATE}
+        <br>Timestamp: ${timestamp}
+        <br>${beginDate}`;
+    }
+    else {
+        let timestamp = Number(tornado.BEGIN_TIMESTAMP)
+        let endDate = new Date(timestamp * 1000).toUTCString();
+        text +=
+        `<h2>${tornado.TOR_F_SCALE} Tornado (End Point)</h2>
+        ${formatRAP(tornado.END_RANGE, tornado.END_AZIMUTH, tornado.END_LOCATION)}, ${tornado.STATE}
+        <br>${endDate}`;
+    }
+
+    lngth = Number.parseFloat(tornado.TOR_LENGTH).toPrecision(2)
+    if (lngth != 1)
+        mileText += "s";
+
+    text +=
+        `<hr>Length: ${lngth} ${mileText}
+        <br>Width: ${tornado.TOR_WIDTH} yards
+        <hr>Deaths: ${tornado.DEATHS}
+        <br>Injuries: ${tornado.INJURIES}
+        <br>Property Damage: $${tornado.DAMAGE_PROPERTY}
+        <br>Crop Damage: $${tornado.DAMAGE_CROPS}`
+
+    if (tornado.EVENT_NARRATIVE) {
+        text += `<hr>${tornado.EVENT_NARRATIVE}`;        
+    }        
+
+    return text;
+  }
+
+function formatRAP(range, azimuth, location) {
+    let text = "";
+    let mileText = "mile";
+
+    if (location) {
+        if (range) {
+            if (range != 1)
+                mileText += "s";
+            text += `${range} ${mileText} `;
+        }
+    
+        if (azimuth)
+            text += `${azimuth} of `;
+        else
+            text += `Near `;
+
+        text += `${location}`;
+        return text;
+    }
+    else {
+        return `Unknown Location`;
+    }
+}
+
+
+/*****************************************
+ * Functions to build visualizations/tables
+ *****************************************/
 function buildDurationTable(durationData) {
     // clear existing
     durationTable.innerHTML = '';
@@ -458,13 +642,30 @@ function refreshDashboard(forceYear, forceDuration) {
     const finalURL = `${dashboardURL}?${params.toString()}`;
     console.log('Dashboard URL:', finalURL);
 
+
+    /*****************************************
+     * Force turning off 'Events' overlay if on
+     *****************************************/
+    if (map.hasLayer(eventsLayer)) {
+        // visually uncheck control
+        map.removeLayer(eventsLayer);
+    }
+
+    // remove overlay from layerControl to readd
+    layerControl.removeLayer(eventsLayer);
+
+    // recreate empty eventsLayer
+    eventsLayer = L.layerGroup();
+    layerControl.addOverlay(eventsLayer, 'Events');
+    eventsDataFetched = false;
+
     /*****************************************
      * Build visualizations/tables
      *****************************************/
     // fetch data
     d3.json(finalURL).then(data => {
         // console log api data
-        console.log('API data:', data);
+        console.log('Dashboard data:', data);
 
         // zoom the map (if state is chosen)
         let numericStateCode = stateToFIPS[stateAbbr];
@@ -491,3 +692,38 @@ dashboardForm.addEventListener('submit', function (event) {
     // load dashboard
     refreshDashboard();
 });
+
+/*****************************************
+* Fetch events data
+*****************************************/
+// fetch events api route data
+function fetchEventsData() {
+    // Build the same param logic
+    let startYear = startYearDropdown.value;
+    let duration = durationDropdown.value;
+    let stateAbbr = stateDropdown.value;
+    let fip = countyDropdown.value;
+  
+    if (!startYear || !duration) {
+      console.log("Cannot fetch events—missing year/duration");
+      return;
+    }
+  
+    let params = new URLSearchParams({
+      start_year: startYear,
+      duration: duration
+    });
+    if (stateAbbr) params.append("state", stateAbbr);
+    if (fip)   params.append("fip", fip);
+  
+    let finalURL = `${eventsURL}?${params.toString()}`;
+    console.log("Fetching events from:", finalURL);
+  
+    d3.json(finalURL)
+      .then((data) => {
+        console.log("Events data:", data.length, "records");
+        buildEventsLayer(data);
+        eventsDataFetched = true;
+      })
+      .catch((err) => console.error(err));
+  }
