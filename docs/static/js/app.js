@@ -1,6 +1,5 @@
 // define url
 const baseURL = 'https://bmitri.pythonanywhere.com/api/v1.0/';
-// const baseURL = 'http://127.0.0.1:5000/api/v1.0/';
 const optionsURL = baseURL + 'options';
 const countiesURL = baseURL + 'counties';
 const dashboardURL = baseURL + 'dashboard';
@@ -291,8 +290,8 @@ function buildCountyHeatmap(countyHeatMapData) {
             let count = lookup[fip] || 0;
             let countyName = countyLookup[fip] || "";
             let stateName = stateLookup[fip] || "";
-            let comma = "";
-            if (countyName === "" || stateName === "")
+            let comma = ", ";
+            if (countyName == "" || stateName == "")
                 comma = "";
 
             layer.bindPopup(`${countyName}${comma}${stateName}<br>${count} Events`);
