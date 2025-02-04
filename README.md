@@ -9,6 +9,10 @@
 ## Project Overview
 This project aims to analyze tornado events from 1950 to 2024 through interactive visualizations and statistical summaries. [Click here for the dashboard](www.google.com)
 
+## Instructions 
+In our website, users can pick from various dropdown options based on their tornado interests, selecting a specific time frame and location. A user begins by navigating through the path of a unique tornado, gaining information about the event at each marker they choose. As they continue, users will be able to understand the severity of occurrences during their selected time period.
+
+
 ## Research Questions
 - What areas are most prone to tornadoes?
 - Where have the most deadly tornado events occurred?
