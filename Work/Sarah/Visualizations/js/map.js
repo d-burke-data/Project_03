@@ -75,24 +75,40 @@ let baseMaps = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 
         // .map with Mitchell and most progress 
         const matchedFeatures = geoData.features.map(feature => {
+            // console.log(`ID: ${feature.id}`);
             // Find the matching county data from the heatmap
             const matchingCounty = api_array.find(county => 
                 county.fip === feature.id
             );
             
+            let matchingCount = 0;
             // If there's a match, return the feature with the count added
             if (matchingCounty) {
-                return {
-                    ...feature,
-                    properties: {
-                        ...feature.properties,
-                        count: matchingCounty.count
-                    }
-                };
+                console.log(`Match! ${matchingCounty.fip}`);
+                matchingCount = matchingCounty.count;
+
+                // return {
+                //     ...feature,
+                //     properties: {
+                //         ...feature.properties,
+                //         // count: matchingCounty.count
+                //         count: matchingCount
+                //     }
+                // };
             }
-            return feature; // Return original feature if no match found
+            return {
+                ...feature,
+                properties: {
+                    ...feature.properties,
+                    // count: matchingCounty.count
+                    count: matchingCount
+                }
+            };
+            // return null;
+            // return feature; // Return original feature if no match found
         });
         
+<<<<<<< HEAD
         console.log(matchedFeatures);
 //         // Worksish but does not add a new count layerto the array "properties" 
 
@@ -123,6 +139,13 @@ let baseMaps = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 
 //         console.log("Updated Features:", matchedFeatures);
     
+=======
+        // console.log(`Matches: ${matchedFeatures}`);
+        // Worksish but does not add a new count layerto the array "properties" 
+
+
+
+>>>>>>> a5eb880e9cf1ebb59f6fdcafbf1f612427b20024
 
 
 
@@ -158,18 +181,18 @@ let baseMaps = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         //     item.properties.count = dataHash[item.properties.ID] || null;
         //   });
 
- 
+        console.log(matchedFeatures);
  
       // Create a new choropleth layer.
-      let geojson = L.choropleth(geoData, {
- 
- 
+      let geojson = L.choropleth(matchedFeatures, {
+         
           // Define which property in the features to use.
-          valueProperty: "Count", // intensity level 
+          valueProperty: "count", // intensity level 
  
  
           // Set the color scale.
-          scale: ["#ffffb2", "#b10026"],
+        //   scale: ["#ffffb2", "#b10026"],
+        scale: ['white', 'black'],
  
  
           // The number of breaks in the step range
