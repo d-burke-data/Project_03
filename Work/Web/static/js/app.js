@@ -227,7 +227,7 @@ stateDropdown.addEventListener('change', () => {
 });
 
 /*****************************************
- * Functions to build maps
+ * County Heatmap: Functions
  *****************************************/
 // county heatmap
 function buildHeatmap(countyHeatMapData) {
@@ -280,6 +280,9 @@ function getColor(count) {
     return "#EEEEE";
 }
 
+/*****************************************
+ * Events Map: Functions
+ *****************************************/
 // events layer map
 function buildEventsLayer(eventsData) {
 
@@ -596,20 +599,9 @@ function buildMonthlyEventsChart(monthlyEventsData) {
 }
 
 /*****************************************
- * Initialize/refresh dashboard function
+ * Build api url function
  *****************************************/
-function refreshDashboard(forceYear, forceDuration) {
-
-    /*****************************************
-     * Build api url
-     *****************************************/
-    // initialize dashboard values (if provided override dropdowns time values)
-    if (forceYear !== undefined) {
-        startYearDropdown.value = forceYear;
-    }
-    if (forceDuration !== undefined) {
-        durationDropdown.value = forceDuration;
-    }
+function buildApiUrl(url) {
 
     // collect values
     let startYear = startYearDropdown.value;
@@ -620,7 +612,7 @@ function refreshDashboard(forceYear, forceDuration) {
     // validate required fields
     if (!startYear || !duration) {
         alert('Please select BOTH start year and duration :)');
-        return;
+        return {finalURL: null, stateAbbr, fip};
     }
 
     // build final dashboard url api call
@@ -639,7 +631,32 @@ function refreshDashboard(forceYear, forceDuration) {
     }
 
     // final API URL
-    const finalURL = `${dashboardURL}?${params.toString()}`;
+    let finalURL = `${url}?${params.toString()}`;
+    return finalURL;
+}
+
+/*****************************************
+ * Initialize/refresh dashboard function
+ *****************************************/
+function refreshDashboard(forceYear, forceDuration) {
+
+    /*****************************************
+     * Build api url
+     *****************************************/
+    // initialize dashboard values (if provided override dropdowns time values)
+    if (forceYear !== undefined) {
+        startYearDropdown.value = forceYear;
+    }
+    if (forceDuration !== undefined) {
+        durationDropdown.value = forceDuration;
+    }
+
+    // collect stateAbbr for zoom
+    let stateAbbr = stateDropdown.value;
+    let numericStateCode = stateToFIPS[stateAbbr];
+
+    // // final API URL
+    let finalURL = buildApiUrl(dashboardURL);
     console.log('Dashboard URL:', finalURL);
 
 
@@ -668,7 +685,7 @@ function refreshDashboard(forceYear, forceDuration) {
         console.log('Dashboard data:', data);
 
         // zoom the map (if state is chosen)
-        let numericStateCode = stateToFIPS[stateAbbr];
+        //let numericStateCode = stateToFIPS[stateAbbr];
         zoomToState(numericStateCode);
 
         // build visualizations
@@ -698,25 +715,9 @@ dashboardForm.addEventListener('submit', function (event) {
 *****************************************/
 // fetch events api route data
 function fetchEventsData() {
-    // Build the same param logic
-    let startYear = startYearDropdown.value;
-    let duration = durationDropdown.value;
-    let stateAbbr = stateDropdown.value;
-    let fip = countyDropdown.value;
-  
-    if (!startYear || !duration) {
-      console.log("Cannot fetch events—missing year/duration");
-      return;
-    }
-  
-    let params = new URLSearchParams({
-      start_year: startYear,
-      duration: duration
-    });
-    if (stateAbbr) params.append("state", stateAbbr);
-    if (fip)   params.append("fip", fip);
-  
-    let finalURL = `${eventsURL}?${params.toString()}`;
+
+    // build api url for events data
+    let finalURL = buildApiUrl(eventsURL);
     console.log("Fetching events from:", finalURL);
   
     d3.json(finalURL)
