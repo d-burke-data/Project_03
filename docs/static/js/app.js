@@ -1,65 +1,50 @@
 // define url
 const baseURL = 'https://bmitri.pythonanywhere.com/api/v1.0/';
+// const baseURL = 'http://127.0.0.1:5000/api/v1.0/';
 const optionsURL = baseURL + 'options';
 const countiesURL = baseURL + 'counties';
 const dashboardURL = baseURL + 'dashboard';
+const eventsURL = baseURL + 'events';
 
 // store entire counties
 let allCounties = [];
 
+// map/leaflet variables
+let map;  //map instance
+let layerControl;  //for toggling overlays
+
+let countyLayer;  //county heatmap layer
+let eventsLayer;  //marker layer for events
+let heatLayer;  // heatmap layer for events
+let usCountiesGeoJSON;  //loaded county boundaries
+
+// events data
+let eventsDataFetched = false;  //track if we've fetched events data
+let allEventsData = null;  //store all events data globally
+let monthlyData = null; // store monthly data to switch between
+
+// flags to check if each extra map layer is already built
+let eventsLayerBuilt = false;
+let eventsHeatLayerBuilt = false;
+
+// store references for events marker arrays 
+let beginMarkers = [];
+let endMarkers = [];
+// layer groups to show/hid events markers
+let beginLayerGroup;
+let endLayerGroup;
+
+
 // add dictionary for state
 const stateToFIPS = {
-    AL: "01",
-    AK: "02",
-    AZ: "04",
-    AR: "05",
-    CA: "06",
-    CO: "08",
-    CT: "09",
-    DE: "10",
-    DC: "11",
-    FL: "12",
-    GA: "13",
-    HI: "15",
-    ID: "16",
-    IL: "17",
-    IN: "18",
-    IA: "19",
-    KS: "20",
-    KY: "21",
-    LA: "22",
-    ME: "23",
-    MD: "24",
-    MA: "25",
-    MI: "26",
-    MN: "27",
-    MS: "28",
-    MO: "29",
-    MT: "30",
-    NE: "31",
-    NV: "32",
-    NH: "33",
-    NJ: "34",
-    NM: "35",
-    NY: "36",
-    NC: "37",
-    ND: "38",
-    OH: "39",
-    OK: "40",
-    OR: "41",
-    PA: "42",
-    RI: "44",
-    SC: "45",
-    SD: "46",
-    TN: "47",
-    TX: "48",
-    UT: "49",
-    VT: "50",
-    VA: "51",
-    WA: "53",
-    WV: "54",
-    WI: "55",
-    WY: "56"
+    AL: '01', AK: '02', AZ: '04', AR: '05', CA: '06', CO: '08', CT: '09',
+    DE: '10', DC: '11', FL: '12', GA: '13', HI: '15', ID: '16', IL: '17',
+    IN: '18', IA: '19', KS: '20', KY: '21', LA: '22', ME: '23', MD: '24',
+    MA: '25', MI: '26', MN: '27', MS: '28', MO: '29', MT: '30', NE: '31',
+    NV: '32', NH: '33', NJ: '34', NM: '35', NY: '36', NC: '37', ND: '38',
+    OH: '39', OK: '40', OR: '41', PA: '42', RI: '44', SC: '45', SD: '46',
+    TN: '47', TX: '48', UT: '49', VT: '50', VA: '51', WA: '53', WV: '54',
+    WI: '55', WY: '56'
   };
 
 /*****************************************
@@ -71,6 +56,10 @@ const startYearDropdown = document.getElementById('startYearDropdown');
 const durationDropdown = document.getElementById('durationDropdown');
 const stateDropdown = document.getElementById('stateDropdown');
 const countyDropdown = document.getElementById('countyDropdown');
+const totalsDropdown = document.getElementById('totalsDropdown');
+
+// for "generating" message
+const generatingText = document.getElementById('generating-text');
 
 // for visualizations
 const heatmapDiv = document.getElementById('heatmap');
@@ -125,11 +114,6 @@ function populateCountyDropdown(selectElement, items, placeholder) {
 /**********************************************
  * Initialize heatmap function
  *********************************************/
-// leaflet variables
-let map;  //map instance
-let countyLayer;  //curent GeoJSON layer
-let usCountiesGeoJSON;  //loaded county boundaries
-
 function initMap() {
     // create map in heatmapDiv centered on US (zoom 4)
     map = L.map('heatmap').setView([37.8, -96], 4);
@@ -138,6 +122,29 @@ function initMap() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: "© OpenStreetMap contributors"
     }).addTo(map);
+
+    // create layer control with no overlays yet
+    layerControl = L.control.layers(null, null, {collapsed: false}).addTo(map);
+
+    // create an empty events layer and add it as an overlay (as a toggle option)
+    eventsLayer = L.layerGroup();
+    layerControl.addOverlay(eventsLayer, 'Events');
+
+    // create an empty heat layer and add it as a overlay toggle option
+    heatLayer = L.layerGroup();
+    layerControl.addOverlay(heatLayer, 'Heatmap');
+
+    // listen for overlay toggles --> event data fetch doesn't happen until this
+    map.on('overlayadd', function(e) {
+        //user toggled on 'Events' overlay
+        if (e.name === 'Events') {
+          getEventsData().then(data => buildEventsLayer(data));  //only builds layer once
+        }
+        // user toggled on 'Heatmap' overlay
+        if (e.name === 'Heatmap') {
+          getEventsData().then(data => buildEventsHeatLayer(data));  //only builds layer once
+        }
+      });
 }
 
 /**********************************************
@@ -189,7 +196,7 @@ window.addEventListener('DOMContentLoaded', () => {
         .then((data) => {
             // populate start year and state dropdowns
             populateDropdown(startYearDropdown, data.years, 'Select...');
-            populateDropdown(stateDropdown, data.states, 'Select...');
+            populateDropdown(stateDropdown, data.states, 'All');
             
             // find latest year
             let latestYear = Math.max(...data.years);
@@ -222,7 +229,7 @@ stateDropdown.addEventListener('change', () => {
     let selectedState = stateDropdown.value;
     if (!selectedState) {
         // reset county dropdown if user cleared selection
-        countyDropdown.innerHTML = "<option value=''>Select a State first...</option>";
+        countyDropdown.innerHTML = "<option value=''>All</option>";
         return;
     }
 
@@ -232,23 +239,38 @@ stateDropdown.addEventListener('change', () => {
     );
 
     // convert to a list of just county names & populate dropdown
-    populateCountyDropdown(countyDropdown, filtered, 'Select...');
+    populateCountyDropdown(countyDropdown, filtered, 'All');
 
 });
 
+/********************************************
+ * Change bar chart metric based on dropdown
+ ********************************************/
+totalsDropdown.addEventListener('change', () => {
+    buildMonthlyEventsChart(monthlyData);
+});
+
+
 /*****************************************
- * Functions to build visualizations/tables
+ * County Heatmap: Functions
  *****************************************/
-function buildHeatmap(countyHeatMapData) {
+// county heatmap
+function buildCountyHeatmap(countyHeatMapData) {
     // build lookup from dashbaord api call data
     let lookup = {};
+    let countyLookup = {};
+    let stateLookup = {};
+
     countyHeatMapData.forEach((item) => {
         lookup[item.fip] = item.count;
+        countyLookup[item.fip] = item.name;
+        stateLookup[item.fip] = item.state;
     });
 
     // remove old layer if there
     if (countyLayer) {
         map.removeLayer(countyLayer);
+        layerControl.removeLayer(countyLayer);
     }
 
     // create a new GeoJSON layer
@@ -257,7 +279,7 @@ function buildHeatmap(countyHeatMapData) {
             let fip = feature.id;
             let count = lookup[fip] || 0; //get 0 if not found
             return {
-                fillColor: getColor(count),
+                fillColor: getCountyHeatmapColor(count),
                 color: '#999',
                 weight: 1,
                 fillOpacity: 0.7
@@ -267,17 +289,19 @@ function buildHeatmap(countyHeatMapData) {
             // define popups
             let fip = feature.id;
             let count = lookup[fip] || 0;
-            layer.bindPopup(`Count: ${count}`);
+            let countyName = countyLookup[fip] || "";
+            let stateName = stateLookup[fip] || "";
+            layer.bindPopup(`${countyName}, ${stateName}<br>${count} Events`);
         }
     });
 
     // add layer to map
     countyLayer.addTo(map);
-
+    layerControl.addOverlay(countyLayer, 'Counties');
 }
 
 // heatmap color scale
-function getColor(count) {
+function getCountyHeatmapColor(count) {
     // breakpoints
     if (count > 20) return "#800026";
     if (count > 10) return "#BD0026";
@@ -287,6 +311,250 @@ function getColor(count) {
     return "#EEEEE";
 }
 
+/*****************************************
+ * Events Map: Functions
+ *****************************************/
+// events layer map
+function buildEventsLayer(eventsData) {
+
+    // if we already built this layer, do nothing
+    if (eventsLayerBuilt) return;
+
+    // Clear old or create new if it doesn't exist
+    eventsLayer.clearLayers();
+    beginMarkers = [];
+    endMarkers = [];
+
+    // recreate fresh layer groups
+    beginLayerGroup = L.layerGroup();
+    endLayerGroup = L.layerGroup();
+  
+    // build markers
+    for (let i = 0; i < eventsData.length; i++) {
+      let tornado = eventsData[i];
+      if (tornado.BEGIN_LAT) {
+        let color = colorScale[tornado.TOR_F_LEVEL];
+        let beginCoord = [tornado.BEGIN_LAT, tornado.BEGIN_LON];
+        let beginMarker = L.shapeMarker(beginCoord, {
+          title: `${tornado.TOR_F_SCALE} Begin Point`,
+          zIndexOffset: 100,
+          shape: "triangle-down",
+          radius: getMarkerSize(map.getZoom(), true),
+          color: "black",
+          weight: 1,
+          fillColor: color,
+          fillOpacity: 0.8
+        }).bindPopup(createPopup(tornado, true), {
+            maxWidth: 650,
+            maxHeight: 400
+        });
+        beginMarkers.push(beginMarker);
+  
+        if (tornado.END_LAT) {
+          let endCoord = [tornado.END_LAT, tornado.END_LON];
+          if (endCoord[0] !== beginCoord[0] || endCoord[1] !== beginCoord[1]) {
+            let endMarker = L.shapeMarker(endCoord, {
+              title: `${tornado.TOR_F_SCALE} End Point`,
+              zIndexOffset: -100,
+              shape: "square",
+              radius: getMarkerSize(map.getZoom(), false),
+              color: "black",
+              weight: 1,
+              fillColor: color,
+              fillOpacity: 0.8
+            }).bindPopup(createPopup(tornado, false), {
+                maxWidth: 650,
+                maxHeight: 400
+            });
+            endMarkers.push(endMarker);
+            
+            // path
+            let pathLine = L.polyline([beginCoord, endCoord], {
+              stroke: false,
+              color: color
+            }).arrowheads({
+              yawn: 40,
+              size: "10%",
+              frequency: 10,
+              fill: true,
+              fillColor: color
+            });
+            endMarkers.push(pathLine);
+          }
+        }
+      }
+    }
+    
+    // add markers to layer groups
+    beginLayerGroup = L.layerGroup(beginMarkers);
+    endLayerGroup = L.layerGroup(endMarkers);
+    
+    // add both to eventsLayer
+    eventsLayer.addLayer(beginLayerGroup);
+    eventsLayer.addLayer(endLayerGroup);
+
+    // track that this layer is now built
+    eventsLayerBuilt = true;
+  
+    // Attach zoom handler for resizing
+    map.on("zoomend", markersZoom);
+    markersZoom();
+}
+
+// color scale for events
+let colorScale = {
+    "0": "#00FFFF", // CYAN
+    "1": "#00FF00", // GREEN
+    "2": "#FFFF00", // YELLOW
+    "3": "#FFA500", // ORANGE
+    "4": "#FF0000", // RED
+    "5": "#4B0082", // INDIGO
+    "U": "#D3D3D3"  // GRAY
+};
+
+// functions for events layer
+function markersZoom() {
+  let z = map.getZoom();
+  // threshold if you want to hide end markers at low zoom
+  let threshold = 8;
+  
+  // Hide endLayerGroup if zoom < threshold
+  if (z < threshold) {
+    if (eventsLayer.hasLayer(endLayerGroup)) {
+      eventsLayer.removeLayer(endLayerGroup);
+    }
+  } else {
+    if (!eventsLayer.hasLayer(endLayerGroup)) {
+      eventsLayer.addLayer(endLayerGroup);
+    }
+  }
+
+  // resize markers
+  beginMarkers.forEach((mk) => {
+    mk.setRadius(getMarkerSize(z, true));
+  });
+
+  endMarkers.forEach((mk) => {
+    // if it's a shapeMarker the setradius
+    if (mk.options && mk.setRadius) {
+      mk.setRadius(getMarkerSize(z, false));
+    }
+  });
+}
+
+function getMarkerSize(zoom, isBegin) {
+    let multiplier = 0.5;
+    if (isBegin) multiplier *= 2;
+    return zoom * multiplier;
+  }
+
+function createPopup(tornado, isBegin) {
+    let html = "";
+    let mileText = "mile";
+
+    if (isBegin) {
+        let timestamp = Number(tornado.BEGIN_TIMESTAMP)
+        let beginDate = new Date(timestamp * 1000).toUTCString();
+        html +=
+        `<h2>${tornado.TOR_F_SCALE} Tornado (Begin Point)</h2>
+        ${formatRAP(tornado.BEGIN_RANGE, tornado.BEGIN_AZIMUTH, tornado.BEGIN_LOCATION, tornado.STATE)}
+        <br>${beginDate}`;
+    }
+    else {
+        let timestamp = Number(tornado.BEGIN_TIMESTAMP)
+        let endDate = new Date(timestamp * 1000).toUTCString();
+        html +=
+        `<h2>${tornado.TOR_F_SCALE} Tornado (End Point)</h2>
+        ${formatRAP(tornado.END_RANGE, tornado.END_AZIMUTH, tornado.END_LOCATION, tornado.STATE)}
+        <br>${endDate}`;
+    }
+
+    let length = Number.parseFloat(tornado.TOR_LENGTH).toPrecision(2)
+    if (length !== 1)
+        mileText += "s";
+
+    html +=
+        `<hr>Length: ${length} ${mileText}
+        <br>Width: ${tornado.TOR_WIDTH} yards
+        <hr>Deaths: ${tornado.DEATHS}
+        <br>Injuries: ${tornado.INJURIES}
+        <br>Property Damage: $${tornado.DAMAGE_PROPERTY.toLocaleString()}
+        <br>Crop Damage: $${tornado.DAMAGE_CROPS.toLocaleString()}`
+
+    if (tornado.EVENT_NARRATIVE) {
+        html += `<hr>${tornado.EVENT_NARRATIVE}`;        
+    }        
+
+    return html;
+  }
+
+function formatRAP(range, azimuth, location, state) {
+    let html = "";
+    let mileText = "mile";
+
+    if (state) {
+        if (location) {
+            if (range) {
+                if (range !== 1)
+                    mileText += "s";
+                html += `${range} ${mileText} `;
+            }
+        
+            if (azimuth)
+                html += `${azimuth} of `;
+            else
+                html += `Near `;
+    
+            html += `${location}, `;
+        }
+        html += state;
+    }
+    return html;
+}
+
+/*****************************************
+ * Heat Events Map: Function
+ *****************************************/
+function buildEventsHeatLayer(eventsData) {
+    // do nothing if layer already built
+    if (eventsHeatLayerBuilt) return;
+
+    // clear old or create new if it doesn't exits
+    heatLayer.clearLayers();
+
+    // filter/map data for leaflet.heat
+    let heatData = eventsData
+        .filter(entry => entry.BEGIN_LAT && entry.BEGIN_LON)
+        .map(entry => ([
+            parseFloat(entry.BEGIN_LAT),
+            parseFloat(entry.BEGIN_LON),
+            1  //intensity
+        ]));
+    
+    // Create and add the heatmap layer
+    let eventsHeatSubLayer = L.heatLayer(heatData, {
+        radius: 25, 
+        blur: 15,
+        minOpacity: 0.3,    
+        maxZoom: 10
+        // gradient: {
+        //     0.1: 'blue',
+        //     0.4: 'lime',
+        //     0.7: 'orange',
+        //     1.0: 'red'
+        // }  
+    });
+
+    // add to our group
+    heatLayer.addLayer(eventsHeatSubLayer);
+
+    // mark as built
+    eventsHeatLayerBuilt = true;
+}
+
+/*****************************************
+ * Functions to build visualizations/tables
+ *****************************************/
 function buildDurationTable(durationData) {
     // clear existing
     durationTable.innerHTML = '';
@@ -301,12 +569,12 @@ function buildDurationTable(durationData) {
         </thead>
         <tbody>
             <tr>
-                <td>Total Hours</td>
-                <td>${durationData.total_hrs.toLocaleString()}</td>
+                <td>Total Time</td>
+                <td>${durationData.total_hrs.toLocaleString()} hours</td>
             </tr>
             <tr>
-                <td>Avg Hours Per Event</td>
-                <td>${durationData.avg_hrs_per_event.toLocaleString()}</td>
+                <td>Average Time Per Event</td>
+                <td>${(durationData.avg_hrs_per_event * 60).toLocaleString()} minutes</td>
             </tr>
         </tbody>
     `;
@@ -321,9 +589,9 @@ function buildTotalsTable(summaryData) {
     let rowMap = {
         events: 'Events',
         deaths: 'Deaths',
-        injuries: 'Injuries',
-        damaged_crops: 'Damaged Crops ($)',
-        damaged_property: 'Damaged Property ($)'
+        injuries: 'Injuries',        
+        damaged_property: 'Property Damage',
+        damaged_crops: 'Crop Damage'
     };
 
     // build table
@@ -338,12 +606,15 @@ function buildTotalsTable(summaryData) {
     `;
     for (let key in rowMap) {
         let label = rowMap[key];
+        let units = "";
         // grabbing total value
         let totalValue = summaryData[key]?.total ?? 0;
+        if (key.includes("damage"))
+            units = "$";
         html += `
             <tr>
                 <td>${label}</td>
-                <td>${totalValue.toLocaleString()}</td>
+                <td>${units}${totalValue.toLocaleString()}</td>
             </tr>
         `
     }
@@ -356,20 +627,36 @@ function buildPieChart(scaleData) {
     let labels = scaleData.map((entry) => entry.scale);
     let values = scaleData.map((entry) => entry.count);
 
+    // reference colorScale for consistency
+    let colorMap = {
+        "EFU/FU": colorScale["U"],
+        "EF0/F0": colorScale["0"],
+        "EF1/F1": colorScale["1"],
+        "EF2/F2": colorScale["2"],
+        "EF3/F3": colorScale["3"],
+        "EF4/F4": colorScale["4"],
+        "EF5/F5": colorScale["5"]
+    };
+
+    // Assign colors by labels
+    let colors = labels.map(label => colorMap[label]); 
+       
     // Create Pie Chart Data
     let pieData = [{
         labels: labels,
         values: values,
         type: 'pie',
         textinfo: 'label+percent',
-        insidetextorientation: 'radial'
+        insidetextorientation: 'radial',
+        marker: {colors: colors},
+        sort: false
     }];
 
     // Define Layout
     let layout = {
         // height: 400,
         // width: 400
-        margin: { t: 40, b: 40} // top/bottom margin in px
+        margin: { t: 40, b: 40}, // top/bottom margin in px
         // legend: { orientation: 'h' }
     };
 
@@ -379,7 +666,27 @@ function buildPieChart(scaleData) {
 function buildMonthlyEventsChart(monthlyEventsData) {
     // create x axis labels (YYYY-MM) and y axis counts arrays
     let xValues = monthlyEventsData.map((item) => `${item.year}-${item.month}`);
+
+    // Default to event count
     let yValues = monthlyEventsData.map((item) => item.count);
+    let units = "Count";
+    switch (totalsDropdown.value) {
+        case 'Deaths':
+            yValues = monthlyEventsData.map((item) => item.deaths);
+            break;
+        case 'Injuries':
+            yValues = monthlyEventsData.map((item) => item.injuries);
+            break;
+        case 'Property Damage':
+            yValues = monthlyEventsData.map((item) => item.propdmg);
+            units = "($)"
+            break;
+        case 'Crop Damage':
+            yValues = monthlyEventsData.map((item) => item.cropdmg);
+            units = "(%)"
+            break;
+    }
+
 
     // setup trace
     let trace = {
@@ -390,28 +697,17 @@ function buildMonthlyEventsChart(monthlyEventsData) {
 
     // define layout
     let layout = {
-        yaxis: {title: 'Event Count'}
+        yaxis: {title: `${totalsDropdown.value} ${units}`}
     };
 
     // plot chart
     Plotly.newPlot(monthlyEventsChart, [trace], layout, {responsive: true});
 }
 
-/*****************************************
- * Initialize/refresh dashboard function
- *****************************************/
-function refreshDashboard(forceYear, forceDuration) {
-
-    /*****************************************
-     * Build api url
-     *****************************************/
-    // initialize dashboard values (if provided override dropdowns time values)
-    if (forceYear !== undefined) {
-        startYearDropdown.value = forceYear;
-    }
-    if (forceDuration !== undefined) {
-        durationDropdown.value = forceDuration;
-    }
+/**********************************************
+ * Build api url function
+ *********************************************/
+function buildApiUrl(url) {
 
     // collect values
     let startYear = startYearDropdown.value;
@@ -422,7 +718,7 @@ function refreshDashboard(forceYear, forceDuration) {
     // validate required fields
     if (!startYear || !duration) {
         alert('Please select BOTH start year and duration :)');
-        return;
+        return {finalURL: null, stateAbbr, fip};
     }
 
     // build final dashboard url api call
@@ -441,8 +737,63 @@ function refreshDashboard(forceYear, forceDuration) {
     }
 
     // final API URL
-    const finalURL = `${dashboardURL}?${params.toString()}`;
+    let finalURL = `${url}?${params.toString()}`;
+    return finalURL;
+}
+
+/*****************************************
+ * Initialize/refresh dashboard function
+ *****************************************/
+function refreshDashboard(forceYear, forceDuration) {
+
+    /*****************************************
+     * Build api url
+     *****************************************/
+    // initialize dashboard values (if provided override dropdowns time values)
+    if (forceYear !== undefined) {
+        startYearDropdown.value = forceYear;
+    }
+    if (forceDuration !== undefined) {
+        durationDropdown.value = forceDuration;
+    }
+
+    // collect stateAbbr for zoom
+    let stateAbbr = stateDropdown.value;
+    let numericStateCode = stateToFIPS[stateAbbr];
+
+    // // final API URL
+    let finalURL = buildApiUrl(dashboardURL);
     console.log('Dashboard URL:', finalURL);
+
+    /*****************************************
+     * Reset the events data so it will fetch again
+     *****************************************/
+    allEventsData = null;
+    eventsDataFetched = false;
+
+    /*****************************************
+     * Force turning off 'Events' overlay if on
+     *****************************************/
+    if (map.hasLayer(eventsLayer)) {
+        // visually uncheck control
+        map.removeLayer(eventsLayer);
+    }
+    
+    // clear/reset build flag
+    eventsLayer.clearLayers();
+    eventsLayerBuilt = false;
+
+    /*****************************************
+     * Force turning off 'Heatmap' overlay if on
+     *****************************************/
+    if (map.hasLayer(heatLayer)) {
+        // visually uncheck control
+        map.removeLayer(heatLayer);
+    }
+    
+    // clear/reset build flag
+    heatLayer.clearLayers();
+    eventsHeatLayerBuilt = false;
 
     /*****************************************
      * Build visualizations/tables
@@ -450,18 +801,20 @@ function refreshDashboard(forceYear, forceDuration) {
     // fetch data
     d3.json(finalURL).then(data => {
         // console log api data
-        console.log('API data:', data);
+        console.log('Dashboard data:', data);
 
         // zoom the map (if state is chosen)
-        let numericStateCode = stateToFIPS[stateAbbr];
+        //let numericStateCode = stateToFIPS[stateAbbr];
         zoomToState(numericStateCode);
 
         // build visualizations
-        buildHeatmap(data.county_heatmap);
+        buildCountyHeatmap(data.county_heatmap);
         buildDurationTable(data.duration_table);
         buildTotalsTable(data.summary_table);
         buildPieChart(data.scale_pie);
-        buildMonthlyEventsChart(data.monthly_events_chart);
+        monthlyData = data.monthly_events_chart;
+        buildMonthlyEventsChart(monthlyData);
+        generatingMessage(false);
     })
     .catch((err) => console.error(err));
 }
@@ -470,10 +823,45 @@ function refreshDashboard(forceYear, forceDuration) {
  * Generate button
  *****************************************/
 dashboardForm.addEventListener('submit', function (event) {
-    
+    generatingMessage(true);
+
     // prevent page reload
     event.preventDefault();
 
     // load dashboard
     refreshDashboard();
 });
+
+/*****************************************
+* Fetch events data
+*****************************************/
+// fetch events api route data
+function getEventsData() {
+
+    // if data is already fetched, return it
+    if (allEventsData) {
+        return Promise.resolve(allEventsData);
+    }
+
+    // otherwise, build api url for events
+    generatingMessage(true);
+    let finalURL = buildApiUrl(eventsURL);
+    console.log("Fetching events from:", finalURL);
+    
+    // fetch data
+    return d3.json(finalURL).then(data => {
+        console.log('Events data fetched:', data.length, 'records');
+        allEventsData = data;  //store in global
+        eventsDataFetched = true;  //mark as fetched
+        generatingMessage(false);
+        return data;  // return data        
+    })
+    .catch((err) => {console.error('Error fetching events data:', err)});
+}
+
+function generatingMessage(on) {
+    if (on)
+        generatingText.innerHTML = "<strong>Generating, please wait...</strong>";
+    else
+        generatingText.innerHTML = "";
+}

@@ -98,7 +98,7 @@
 
            <!-- Pie Chart: Right Column -->
             <div class="col-md-6">
-              <h4>Event by EF-Scale</h4>
+              <h4>Events by EF-Scale</h4>
               <div id="scalePieChart" style="height: 500px;"></div>
               <!-- Fill with JS -->
             </div>
@@ -107,7 +107,19 @@
         <!-- Row 4: Bar Chart for Monthly Events -->
          <div class="row">
           <div class="col-12">
-            <h4>Total Events by Month</h4>
+            <h4>Totals by Month</h4>
+            <form id="totalsForm" class="row row-cols-lg-auto g-3 align-items-center">
+              <div class="col-auto pb-2">
+                <select id="totalsDropdown" class="form-select">
+                  <!-- Populate options with JS -->
+                  <option value="Events" selected>Events</option>
+                  <option value="Deaths">Deaths</option>
+                  <option value="Injuries">Injuries</option>
+                  <option value="Property Damage">Property Damage</option>
+                  <option value="Crop Damage">Crop Damage</option>
+                </select>
+              </div>
+            </form>
             <div id="monthlyEventsChart" style="height: 500px;"></div>
             <!-- Fill with JS -->
           </div>

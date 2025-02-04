@@ -1,5 +1,6 @@
 // define url
 const baseURL = 'https://bmitri.pythonanywhere.com/api/v1.0/';
+// const baseURL = 'http://127.0.0.1:5000/api/v1.0/';
 const optionsURL = baseURL + 'options';
 const countiesURL = baseURL + 'counties';
 const dashboardURL = baseURL + 'dashboard';
@@ -20,6 +21,7 @@ let usCountiesGeoJSON;  //loaded county boundaries
 // events data
 let eventsDataFetched = false;  //track if we've fetched events data
 let allEventsData = null;  //store all events data globally
+let monthlyData = null; // store monthly data to switch between
 
 // flags to check if each extra map layer is already built
 let eventsLayerBuilt = false;
@@ -54,6 +56,7 @@ const startYearDropdown = document.getElementById('startYearDropdown');
 const durationDropdown = document.getElementById('durationDropdown');
 const stateDropdown = document.getElementById('stateDropdown');
 const countyDropdown = document.getElementById('countyDropdown');
+const totalsDropdown = document.getElementById('totalsDropdown');
 
 // for "generating" message
 const generatingText = document.getElementById('generating-text');
@@ -240,15 +243,28 @@ stateDropdown.addEventListener('change', () => {
 
 });
 
+/********************************************
+ * Change bar chart metric based on dropdown
+ ********************************************/
+totalsDropdown.addEventListener('change', () => {
+    buildMonthlyEventsChart(monthlyData);
+});
+
+
 /*****************************************
  * County Heatmap: Functions
  *****************************************/
 // county heatmap
-function buildHeatmap(countyHeatMapData) {
+function buildCountyHeatmap(countyHeatMapData) {
     // build lookup from dashbaord api call data
     let lookup = {};
+    let countyLookup = {};
+    let stateLookup = {};
+
     countyHeatMapData.forEach((item) => {
         lookup[item.fip] = item.count;
+        countyLookup[item.fip] = item.name;
+        stateLookup[item.fip] = item.state;
     });
 
     // remove old layer if there
@@ -263,7 +279,7 @@ function buildHeatmap(countyHeatMapData) {
             let fip = feature.id;
             let count = lookup[fip] || 0; //get 0 if not found
             return {
-                fillColor: getHeatmapColor(count),
+                fillColor: getCountyHeatmapColor(count),
                 color: '#999',
                 weight: 1,
                 fillOpacity: 0.7
@@ -273,18 +289,19 @@ function buildHeatmap(countyHeatMapData) {
             // define popups
             let fip = feature.id;
             let count = lookup[fip] || 0;
-            layer.bindPopup(`Events: ${count}`);
+            let countyName = countyLookup[fip] || "";
+            let stateName = stateLookup[fip] || "";
+            layer.bindPopup(`${countyName}, ${stateName}<br>${count} Events`);
         }
     });
 
     // add layer to map
     countyLayer.addTo(map);
     layerControl.addOverlay(countyLayer, 'Counties');
-
 }
 
 // heatmap color scale
-function getHeatmapColor(count) {
+function getCountyHeatmapColor(count) {
     // breakpoints
     if (count > 20) return "#800026";
     if (count > 10) return "#BD0026";
@@ -391,7 +408,7 @@ let colorScale = {
     "2": "#FFFF00", // YELLOW
     "3": "#FFA500", // ORANGE
     "4": "#FF0000", // RED
-    "5": "#000000", // BLACK
+    "5": "#4B0082", // INDIGO
     "U": "#D3D3D3"  // GRAY
 };
 
@@ -432,23 +449,23 @@ function getMarkerSize(zoom, isBegin) {
   }
 
 function createPopup(tornado, isBegin) {
-    let text = "";
+    let html = "";
     let mileText = "mile";
 
     if (isBegin) {
         let timestamp = Number(tornado.BEGIN_TIMESTAMP)
         let beginDate = new Date(timestamp * 1000).toUTCString();
-        text +=
+        html +=
         `<h2>${tornado.TOR_F_SCALE} Tornado (Begin Point)</h2>
-        ${formatRAP(tornado.BEGIN_RANGE, tornado.BEGIN_AZIMUTH, tornado.BEGIN_LOCATION)}, ${tornado.STATE}
+        ${formatRAP(tornado.BEGIN_RANGE, tornado.BEGIN_AZIMUTH, tornado.BEGIN_LOCATION, tornado.STATE)}
         <br>${beginDate}`;
     }
     else {
         let timestamp = Number(tornado.BEGIN_TIMESTAMP)
         let endDate = new Date(timestamp * 1000).toUTCString();
-        text +=
+        html +=
         `<h2>${tornado.TOR_F_SCALE} Tornado (End Point)</h2>
-        ${formatRAP(tornado.END_RANGE, tornado.END_AZIMUTH, tornado.END_LOCATION)}, ${tornado.STATE}
+        ${formatRAP(tornado.END_RANGE, tornado.END_AZIMUTH, tornado.END_LOCATION, tornado.STATE)}
         <br>${endDate}`;
     }
 
@@ -456,7 +473,7 @@ function createPopup(tornado, isBegin) {
     if (length !== 1)
         mileText += "s";
 
-    text +=
+    html +=
         `<hr>Length: ${length} ${mileText}
         <br>Width: ${tornado.TOR_WIDTH} yards
         <hr>Deaths: ${tornado.DEATHS}
@@ -465,34 +482,34 @@ function createPopup(tornado, isBegin) {
         <br>Crop Damage: $${tornado.DAMAGE_CROPS.toLocaleString()}`
 
     if (tornado.EVENT_NARRATIVE) {
-        text += `<hr>${tornado.EVENT_NARRATIVE}`;        
+        html += `<hr>${tornado.EVENT_NARRATIVE}`;        
     }        
 
-    return text;
+    return html;
   }
 
-function formatRAP(range, azimuth, location) {
-    let text = "";
+function formatRAP(range, azimuth, location, state) {
+    let html = "";
     let mileText = "mile";
 
-    if (location) {
-        if (range) {
-            if (range !== 1)
-                mileText += "s";
-            text += `${range} ${mileText} `;
-        }
+    if (state) {
+        if (location) {
+            if (range) {
+                if (range !== 1)
+                    mileText += "s";
+                html += `${range} ${mileText} `;
+            }
+        
+            if (azimuth)
+                html += `${azimuth} of `;
+            else
+                html += `Near `;
     
-        if (azimuth)
-            text += `${azimuth} of `;
-        else
-            text += `Near `;
-
-        text += `${location}`;
-        return text;
+            html += `${location}, `;
+        }
+        html += state;
     }
-    else {
-        return `Unknown Relative Location`;
-    }
+    return html;
 }
 
 /*****************************************
@@ -507,10 +524,10 @@ function buildEventsHeatLayer(eventsData) {
 
     // filter/map data for leaflet.heat
     let heatData = eventsData
-        .filter(entry => entry.END_LAT && entry.END_LON)
+        .filter(entry => entry.BEGIN_LAT && entry.BEGIN_LON)
         .map(entry => ([
-            parseFloat(entry.END_LAT),
-            parseFloat(entry.END_LON),
+            parseFloat(entry.BEGIN_LAT),
+            parseFloat(entry.BEGIN_LON),
             1  //intensity
         ]));
     
@@ -572,9 +589,9 @@ function buildTotalsTable(summaryData) {
     let rowMap = {
         events: 'Events',
         deaths: 'Deaths',
-        injuries: 'Injuries',
-        damaged_crops: 'Damaged Crops ($)',
-        damaged_property: 'Damaged Property ($)'
+        injuries: 'Injuries',        
+        damaged_property: 'Property Damage',
+        damaged_crops: 'Crop Damage'
     };
 
     // build table
@@ -589,12 +606,15 @@ function buildTotalsTable(summaryData) {
     `;
     for (let key in rowMap) {
         let label = rowMap[key];
+        let units = "";
         // grabbing total value
         let totalValue = summaryData[key]?.total ?? 0;
+        if (key.includes("damage"))
+            units = "$";
         html += `
             <tr>
                 <td>${label}</td>
-                <td>${totalValue.toLocaleString()}</td>
+                <td>${units}${totalValue.toLocaleString()}</td>
             </tr>
         `
     }
@@ -607,15 +627,15 @@ function buildPieChart(scaleData) {
     let labels = scaleData.map((entry) => entry.scale);
     let values = scaleData.map((entry) => entry.count);
 
-    // Set colors
+    // reference colorScale for consistency
     let colorMap = {
-        "EF0/F0": "#00FFFF", // CYAN
-        "EF1/F1": "#00FF00", // GREEN
-        "EF2/F2": "#FFFF00", // YELLOW
-        "EF3/F3": "#FFA500", // ORANGE
-        "EF4/F4": "#FF0000", // RED
-        "EF5/F5": "#000000", // BLACK
-        "EFU/FU": "#D3D3D3"  // GRAY
+        "EFU/FU": colorScale["U"],
+        "EF0/F0": colorScale["0"],
+        "EF1/F1": colorScale["1"],
+        "EF2/F2": colorScale["2"],
+        "EF3/F3": colorScale["3"],
+        "EF4/F4": colorScale["4"],
+        "EF5/F5": colorScale["5"]
     };
 
     // Assign colors by labels
@@ -628,14 +648,15 @@ function buildPieChart(scaleData) {
         type: 'pie',
         textinfo: 'label+percent',
         insidetextorientation: 'radial',
-        marker: {colors: colors}
+        marker: {colors: colors},
+        sort: false
     }];
 
     // Define Layout
     let layout = {
         // height: 400,
         // width: 400
-        margin: { t: 40, b: 40} // top/bottom margin in px
+        margin: { t: 40, b: 40}, // top/bottom margin in px
         // legend: { orientation: 'h' }
     };
 
@@ -645,7 +666,27 @@ function buildPieChart(scaleData) {
 function buildMonthlyEventsChart(monthlyEventsData) {
     // create x axis labels (YYYY-MM) and y axis counts arrays
     let xValues = monthlyEventsData.map((item) => `${item.year}-${item.month}`);
+
+    // Default to event count
     let yValues = monthlyEventsData.map((item) => item.count);
+    let units = "Count";
+    switch (totalsDropdown.value) {
+        case 'Deaths':
+            yValues = monthlyEventsData.map((item) => item.deaths);
+            break;
+        case 'Injuries':
+            yValues = monthlyEventsData.map((item) => item.injuries);
+            break;
+        case 'Property Damage':
+            yValues = monthlyEventsData.map((item) => item.propdmg);
+            units = "($)"
+            break;
+        case 'Crop Damage':
+            yValues = monthlyEventsData.map((item) => item.cropdmg);
+            units = "(%)"
+            break;
+    }
+
 
     // setup trace
     let trace = {
@@ -656,7 +697,7 @@ function buildMonthlyEventsChart(monthlyEventsData) {
 
     // define layout
     let layout = {
-        yaxis: {title: 'Event Count'}
+        yaxis: {title: `${totalsDropdown.value} ${units}`}
     };
 
     // plot chart
@@ -767,11 +808,12 @@ function refreshDashboard(forceYear, forceDuration) {
         zoomToState(numericStateCode);
 
         // build visualizations
-        buildHeatmap(data.county_heatmap);
+        buildCountyHeatmap(data.county_heatmap);
         buildDurationTable(data.duration_table);
         buildTotalsTable(data.summary_table);
         buildPieChart(data.scale_pie);
-        buildMonthlyEventsChart(data.monthly_events_chart);
+        monthlyData = data.monthly_events_chart;
+        buildMonthlyEventsChart(monthlyData);
         generatingMessage(false);
     })
     .catch((err) => console.error(err));
