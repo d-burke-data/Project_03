@@ -7,6 +7,61 @@ const dashboardURL = baseURL + 'dashboard';
 // store entire counties
 let allCounties = [];
 
+// add dictionary for state
+const stateToFIPS = {
+    AL: "01",
+    AK: "02",
+    AZ: "04",
+    AR: "05",
+    CA: "06",
+    CO: "08",
+    CT: "09",
+    DE: "10",
+    DC: "11",
+    FL: "12",
+    GA: "13",
+    HI: "15",
+    ID: "16",
+    IL: "17",
+    IN: "18",
+    IA: "19",
+    KS: "20",
+    KY: "21",
+    LA: "22",
+    ME: "23",
+    MD: "24",
+    MA: "25",
+    MI: "26",
+    MN: "27",
+    MS: "28",
+    MO: "29",
+    MT: "30",
+    NE: "31",
+    NV: "32",
+    NH: "33",
+    NJ: "34",
+    NM: "35",
+    NY: "36",
+    NC: "37",
+    ND: "38",
+    OH: "39",
+    OK: "40",
+    OR: "41",
+    PA: "42",
+    RI: "44",
+    SC: "45",
+    SD: "46",
+    TN: "47",
+    TX: "48",
+    UT: "49",
+    VT: "50",
+    VA: "51",
+    WA: "53",
+    WV: "54",
+    WI: "55",
+    WY: "56"
+  };
+
 /*****************************************
  * DOM References
  *****************************************/
@@ -83,6 +138,33 @@ function initMap() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: "© OpenStreetMap contributors"
     }).addTo(map);
+}
+
+/**********************************************
+ * Map zoom to state selection function
+ *********************************************/
+function zoomToState(numericStateCode) {
+    if(!numericStateCode) {
+        // zoom to entire us if no match
+        map.setView([37.8, -96], 4);
+        return;
+    }
+
+    // filter features to just that one state
+    let matchingFeatures = usCountiesGeoJSON.features.filter((feature) => {
+        return feature.properties.STATE == numericStateCode;
+    });
+
+    if (matchingFeatures.length == 0) {
+        // zoom to entire us if no match
+        map.setView([37.8, -96], 4);
+        return;
+    }
+
+    // create temporary layer to get bounds
+    let tempLayer = L.geoJSON(matchingFeatures);
+    map.fitBounds(tempLayer.getBounds());
+    tempLayer.remove();
 }
 
 /**********************************************
@@ -334,7 +416,7 @@ function refreshDashboard(forceYear, forceDuration) {
     // collect values
     let startYear = startYearDropdown.value;
     let duration = durationDropdown.value;
-    let state = stateDropdown.value;
+    let stateAbbr = stateDropdown.value;
     let fip = countyDropdown.value;
 
     // validate required fields
@@ -351,8 +433,8 @@ function refreshDashboard(forceYear, forceDuration) {
     });
 
     // optional endpoints
-    if (state) {
-        params.append('state', state);
+    if (stateAbbr) {
+        params.append('state', stateAbbr);
     }
     if (fip) {
         params.append('fip', fip);
@@ -369,6 +451,10 @@ function refreshDashboard(forceYear, forceDuration) {
     d3.json(finalURL).then(data => {
         // console log api data
         console.log('API data:', data);
+
+        // zoom the map (if state is chosen)
+        let numericStateCode = stateToFIPS[stateAbbr];
+        zoomToState(numericStateCode);
 
         // build visualizations
         buildHeatmap(data.county_heatmap);
