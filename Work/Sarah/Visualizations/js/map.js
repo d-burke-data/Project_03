@@ -38,39 +38,39 @@ let baseMaps = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         const api_array = apiData["county_heatmap"];
         // console.log(api_array);
        
-        // Example of filter
-        // const array_update = api_array.filter((result) => result["fip"]=="06037");
-        // console.log(array_update);
+//         // Example of filter
+//         // const array_update = api_array.filter((result) => result["fip"]=="06037");
+//         // console.log(array_update);
 
-        //array for geojson not being used 
-        // const Geojson_array = geoData["features"] 
+//         //array for geojson not being used 
+//         // const Geojson_array = geoData["features"] 
 
         
-        // Filter attempt 1: to flip from geoJson to api (bigger to smaller data)
-        // const filtered_data = geoJSON_data.filter(item => 
-        //     api_array.some(apiItem => apiItem.fip === item.id)
-        // );
+//         // Filter attempt 1: to flip from geoJson to api (bigger to smaller data)
+//         // const filtered_data = geoJSON_data.filter(item => 
+//         //     api_array.some(apiItem => apiItem.fip === item.id)
+//         // );
 
 
 
-        // Fil
-        // const filtered_api = api_response.filter(apiItem =>
-        //     geoJSON_data.some(geoItem => geoItem.id === apiItem.fip)
-        // );
+//         // Fil
+//         // const filtered_api = api_response.filter(apiItem =>
+//         //     geoJSON_data.some(geoItem => geoItem.id === apiItem.fip)
+//         // );
 
 
-        // // .find AL generated with Mitchell
-        // const matchedFeatures = geoData.features.map(feature => {
-        //     const matchingCounty = api_array.find(county => county.fip === feature.id);
+//         // // .find AL generated with Mitchell
+//         // const matchedFeatures = geoData.features.map(feature => {
+//         //     const matchingCounty = api_array.find(county => county.fip === feature.id);
             
-        //     if (matchingCounty) {
-        //         feature.properties.count = matchingCounty.count;
-        //     }
+//         //     if (matchingCounty) {
+//         //         feature.properties.count = matchingCounty.count;
+//         //     }
             
-        //     return feature;
-        // });
+//         //     return feature;
+//         // });
         
-        // console.log(matchedFeatures);
+//         // console.log(matchedFeatures);
 
 
         // .map with Mitchell and most progress 
@@ -94,7 +94,35 @@ let baseMaps = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         });
         
         console.log(matchedFeatures);
-        // Worksish but does not add a new count layerto the array "properties" 
+//         // Worksish but does not add a new count layerto the array "properties" 
+
+
+// // ChatGBt adds count but zero for all(we need count from api)
+// d3.json(geoJSON_URL).then(function(geoData) {
+//     d3.json(api_URL).then(function(apiData) {
+//         const api_array = apiData["county_heatmap"];
+
+//         console.log("GeoData Sample:", geoData.features[0]);
+//         console.log("API Data Sample:", api_array[0]);
+
+//         const matchedFeatures = geoData.features.map(feature => {
+//             feature.properties = feature.properties || {}; // Ensure properties exist
+
+//             const matchingCounty = api_array.find(county => 
+//                 String(county.fip) === String(feature.id)
+//             );
+
+//             if (matchingCounty) {
+//                 feature.properties.count = matchingCounty.count;
+//             } else {
+//                 feature.properties.count = 0;
+//             }
+
+//             return feature;
+//         });
+
+//         console.log("Updated Features:", matchedFeatures);
+    
 
 
 
@@ -105,9 +133,7 @@ let baseMaps = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 
 
 
-
-
-
+    //demo in plugnin with hash 
 
         // apiData[county_heatmap]
         // console.log(apiData["county_heatmap"][0]["fip"]);
