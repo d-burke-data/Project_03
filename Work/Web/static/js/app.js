@@ -375,7 +375,8 @@ function buildPieChart(scaleData) {
         values: values,
         type: 'pie',
         textinfo: 'label+percent',
-        insidetextorientation: 'radial'
+        insidetextorientation: 'radial',
+        marker: {colors: colors}
     }];
 
     // Define Layout
