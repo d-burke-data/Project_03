@@ -1,8 +1,8 @@
 // define url
-// const baseURL = 'https://bmitri.pythonanywhere.com/api/v1.0/';
-const baseURL = 'http://127.0.0.1:5000/api/v1.0/';
+const baseURL = 'https://bmitri.pythonanywhere.com/api/v1.0/';
 const optionsURL = baseURL + 'options';
 const countiesURL = baseURL + 'counties';
+const scalesURL = baseURL + 'scales';
 const dashboardURL = baseURL + 'dashboard';
 const eventsURL = baseURL + 'events';
 
@@ -56,6 +56,7 @@ const startYearDropdown = document.getElementById('startYearDropdown');
 const durationDropdown = document.getElementById('durationDropdown');
 const stateDropdown = document.getElementById('stateDropdown');
 const countyDropdown = document.getElementById('countyDropdown');
+const scaleDropdown = document.getElementById('scaleDropdown');
 const totalsDropdown = document.getElementById('totalsDropdown');
 
 // for "generating" message
@@ -71,7 +72,7 @@ const monthlyEventsChart = document.getElementById('monthlyEventsChart');
 /*****************************************
  * Populate drowpdown options function
  *****************************************/
-// for non county dropdowns
+// for start year and states dropdowns
 function populateDropdown(selectElement, items, placeholder) {
     // clear existing options
     selectElement.innerHTML = '';
@@ -109,6 +110,26 @@ function populateCountyDropdown(selectElement, items, placeholder) {
         option.textContent = item.COUNTYNAME;  //display name
         selectElement.appendChild(option);
     });
+}
+
+// for scale
+function populateScaleDropdown(selectElement, items, placeholder) {
+    // clear existing options
+    scaleDropdown.innerHTML = '';
+
+    // add placeholder option
+    let placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.textContent = placeholder;
+    selectElement.appendChild(placeholderOption);
+
+    // add each scale option
+    items.forEach((item) => {
+        let option = document.createElement('option');
+        option.value = item.F_SCALE;  //f level (hidden value)
+        option.textContent = item.FUJITA;  //display scale name
+        selectElement.appendChild(option);
+    })
 }
 
 /**********************************************
@@ -214,7 +235,15 @@ window.addEventListener('DOMContentLoaded', () => {
             allCounties = counties;
         })
         .catch((err) => console.error('Error fetching counties', err));
-
+    
+    // fetch scales route for ef scale dropdown
+    fetch(scalesURL)
+        .then((res) => res.json())
+        .then((data) => {
+            // populate scales dropdowns
+            populateScaleDropdown(scaleDropdown, data, 'All');
+        })
+        .catch((err) => console.error('Error fetching scale options', err));
 
     // hardcode duration dropdown options (1-10 years)
     const durations = Array.from({length:10}, (_, i) => i + 1);
@@ -718,6 +747,7 @@ function buildApiUrl(url) {
     let duration = durationDropdown.value;
     let stateAbbr = stateDropdown.value;
     let fip = countyDropdown.value;
+    let scale = scaleDropdown.value;
 
     // validate required fields
     if (!startYear || !duration) {
@@ -738,6 +768,9 @@ function buildApiUrl(url) {
     }
     if (fip) {
         params.append('fip', fip);
+    }
+    if (scale) {
+        params.append('scale', scale);
     }
 
     // final API URL
