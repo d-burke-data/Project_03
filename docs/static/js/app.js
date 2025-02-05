@@ -312,8 +312,8 @@ function buildCountyHeatmap(countyHeatMapData) {
                 //color: '#999',
                 color: '#FFFFFF',
                 //weight: 1,
-                //weight: 0.7,
-                weight: 0.5,
+                weight: 0.7,
+                //weight: 0.5,
                 fillOpacity: 0.7
             };
         },
