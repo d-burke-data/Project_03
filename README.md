@@ -7,7 +7,7 @@
 - David Burke
 
 ## Project Overview
-This project aims to analyze tornado events from 1950 to 2024 through interactive visualizations and statistical summaries. [Click here for the dashboard](www.google.com)
+This project aims to analyze tornado events from 1950 to 2024 through interactive visualizations and statistical summaries. [Click here for the dashboard](https://d-burke-data.github.io/Project_03/)
 
 ## Research Questions
 - What areas are most prone to tornadoes?
