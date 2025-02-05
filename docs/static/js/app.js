@@ -341,7 +341,7 @@ function getCountyHeatmapColor(count) {
     if (count > 5)  return "#E31A1C";
     if (count > 2)  return "#FC4E2A";
     if (count > 0)  return "#FD8D3C";
-    return "#EEEEE";
+    return "#062A77";  //navy
 }
 
 /*****************************************
