@@ -23,11 +23,11 @@ This project has no ethical concerns since it is based on a publicly available d
 - What is the amount of property and crop damage caused by tornadoes?
 
 ## Visualizations
-- **Interactive Leaflet Map**: Displays tornado start and end points to approximate tornado paths. Each marker contains a popup with event details and narratives.
-- **Heatmaps**: Illustrate storm event concentration, casualties, and damage.
+- **Interactive Leaflet Map**: Displays tornado start and end points, and approximate tornado paths. Each marker contains a popup with event details and narratives.
+- **Heatmaps**: Illustrate tornado event concentration.
 - **Trend Graphs**: Show event frequency and severity changes over time, including seasonal patterns.
 - **Pie Chart**: Represents the percentage of tornadoes by severity (based on the Fujita scale) for a given area and time.
-- **Filterable Visualizations**: Users can filter data by date, event type, severity, casualties, and damage.
+- **Filterable Visualizations**: Users can filter data by start year, duration, state, casualties, and F/EF-scale.
 
 ## Backend
 - **Database**: SQLite database storing storm event data.
@@ -35,12 +35,13 @@ This project has no ethical concerns since it is based on a publicly available d
 - **Flask Application**: Serves the website and interfaces with the database.
 
 ## Data Sources
-- **Storm Event Data**: [NOAA Storm Events Database](https://www.ncdc.noaa.gov/stormevents/)
-- **National Weather Service Forecast Zone Shapefiles**: [NWS Public Zones](https://www.weather.gov/gis/PublicZones)
+- **NOAA Storm Event Data**: [NOAA Storm Events Database](https://www.ncdc.noaa.gov/stormevents/) ([Bulk Data Download (CSV)](https://www.ncdc.noaa.gov/stormevents/ftp.jsp))
+- **Plotly Counties by FIPS GeoJSON Data**: [https://github.com/plotly/datasets/blob/master/geojson-counties-fips.json](https://github.com/plotly/datasets/blob/master/geojson-counties-fips.json)
 
 ## Plugins & Libraries
 - **Leaflet**: [https://leafletjs.com/](https://leafletjs.com/)
-- **chroma.js**: [https://gka.github.io/chroma.js/](https://gka.github.io/chroma.js/)
-- **leaflet-marker-direction**: [https://github.com/Thomas2077/leaflet-marker-direction](https://github.com/Thomas2077/leaflet-marker-direction)
-- **heatmap.js**: [https://www.patrick-wied.at/static/heatmapjs/plugin-leaflet-layer.html](https://www.patrick-wied.at/static/heatmapjs/plugin-leaflet-layer.html)
+- **Leaflet.heat**: [https://github.com/Leaflet/Leaflet.heat](https://github.com/Leaflet/Leaflet.heat)
+- **Leaflet.GeometryUtil**: [https://github.com/makinacorpus/Leaflet.GeometryUtil](https://github.com/makinacorpus/Leaflet.GeometryUtil)
+- **Leaflet-arrowheads**: [https://github.com/slutske22/leaflet-arrowheads](https://github.com/slutske22/leaflet-arrowheads)
+- **Leaflet.SvgShapeMarkers**: [https://github.com/rowanwins/Leaflet.SvgShapeMarkers](https://github.com/rowanwins/Leaflet.SvgShapeMarkers)
 
