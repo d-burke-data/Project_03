@@ -1,4 +1,4 @@
-# U.S. Tornado Events Analysis
+# U.S. Tornado Events Dashboard
 This interactive web application dashboard is based on nearly 80k tornado event records in the U.S. from 1950-2024. Explore the final product here: https://d-burke-data.github.io/Project_03/
 
 Three main parts:
