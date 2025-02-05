@@ -38,11 +38,11 @@ CORS(app)
 def welcome():
      return ('Welcome to the tornado API')
 
-# query events by year (optional: state or county)
+# query events by year (optional: state or county or scale)
 @app.route('/api/v1.0/events', methods=['GET'])
 def get_events():
     
-    # endpoint example:/api/v1.0/events?start_year=2020&duration=1&state=AL&fip=01234
+    # endpoint example:/api/v1.0/events?start_year=2020&duration=1&state=AL&fip=01234&scale=1
     '''
     Required: 
         ?start_year = YYYY
@@ -50,6 +50,7 @@ def get_events():
     Optional:
         ?state = state abbreviation
         ?fip = county_fip
+        ?scale = tor_f_level (or f_scale)
     '''
 
     # request endpoints
@@ -57,6 +58,7 @@ def get_events():
     duration = request.args.get('duration', type=int)
     state = request.args.get('state', None, type=str)  #optional
     county = request.args.get('fip', None, type=str)   #optional
+    scale = request.args.get('scale', None, type=str)  #optional
 
     # create session to db
     session = Session(engine)
@@ -76,6 +78,8 @@ def get_events():
         query = query.filter(Counties.STATE == state)
     if county:
         query = query.filter(Counties.FIPS == county)
+    if scale:
+        query = query.filter(Events.TOR_F_LEVEL == scale)
 
     # execute query
     results = query.all()
@@ -170,6 +174,7 @@ def get_dashboard():
     Optional:
         ?state = state abbreviation
         ?fip = county_fip
+        ?scale = tor_f_level (or f_scale)
     '''
     # -----------------------------------------
     # Base query setup
@@ -180,6 +185,7 @@ def get_dashboard():
     duration = request.args.get('duration', type=int)
     state = request.args.get('state', None, type=str)  #optional
     county = request.args.get('fip', None, type=str)   #optional
+    scale = request.args.get('scale', None, type=str)  #optional
 
     # calculate months in duration
     months = duration * 12
@@ -201,6 +207,8 @@ def get_dashboard():
         base_query = base_query.filter(Counties.STATE == state)
     if county:
         base_query = base_query.filter(Counties.FIPS == county)
+    if scale:
+        base_query = base_query.filter(Events.TOR_F_LEVEL == scale)
     
     # -----------------------------------------
     # Dashboard data aggregation
@@ -209,7 +217,7 @@ def get_dashboard():
     # event count by county (for map)
     county_counts = (base_query
                      # select fips, county name, and get count
-                     .with_entities(Counties.FIPS, Counties.COUNTYNAME, func.count(Events.EVENT_ID))
+                     .with_entities(Counties.FIPS, Counties.COUNTYNAME, func.count(Events.EVENT_ID), Counties.STATE)
                      # group by fip
                      .group_by(Counties.FIPS)
                      .all()
@@ -252,7 +260,11 @@ def get_dashboard():
                       .with_entities(
                           func.strftime('%Y', func.datetime(Events.BEGIN_TIMESTAMP, 'unixepoch')).label('yr'),
                           func.strftime('%m', func.datetime(Events.BEGIN_TIMESTAMP, 'unixepoch')).label('mn'),
-                          func.count(Events.EVENT_ID)
+                          func.count(Events.EVENT_ID),
+                          func.sum(Events.DEATHS),
+                          func.sum(Events.INJURIES),
+                          func.sum(Events.DAMAGE_PROPERTY),
+                          func.sum(Events.DAMAGE_CROPS)
                       )
                       .group_by('yr', 'mn')
                       .order_by('yr', 'mn')  #order data chronologically
@@ -268,12 +280,13 @@ def get_dashboard():
 
     # events by county count
     county_heatmap = []
-    for (fip, name, cnt) in county_counts:
+    for (fip, name, cnt, state) in county_counts:
         cnt = cnt or 0  #if cnt is None make 0
         county_heatmap.append({
             'fip': fip,
             'name': name,
-            'count': cnt
+            'count': cnt,
+            'state': state
         })
 
     # pie chart by EF scale
@@ -337,12 +350,16 @@ def get_dashboard():
 
     # monthly events count chart
     monthly_events_chart = []
-    for (yr, mn, cnt) in monthly_counts:
+    for (yr, mn, cnt, dth, inj, pdmg, cdmg) in monthly_counts:
         cnt = cnt or 0   #if cnt is None make 0
         monthly_events_chart.append({
             'year': yr,
             'month': mn,
-            'count': cnt
+            'count': cnt,
+            'deaths': dth,
+            'injuries': inj,
+            'propdmg': pdmg,
+            'cropdmg': cdmg
         })
     
     # -----------------------------------------

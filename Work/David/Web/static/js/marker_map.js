@@ -3,14 +3,16 @@
 
 let eventMapURL = baseURL + 'events';
 
+let EFscale = ["U", "0", "1", "2", "3", "4", "5"];
+
 let colorScale = {
-    "U": "white",
-    "0": "cyan",
-    "1": "green",
-    "2": "yellow",
-    "3": "orange",
-    "4": "red",
-    "5": "black"
+    "U": "#D3D3D3",  // GRAY
+    "0": "#00FFFF", // CYAN
+    "1": "#00FF00", // GREEN
+    "2": "#FFFF00", // YELLOW
+    "3": "#FFA500", // ORANGE
+    "4": "#FF0000", // RED
+    "5": "#000000"  // BLACK
 };
 
 let street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -34,38 +36,53 @@ let baseMaps = {
 
 let beginMarkers = [];
 let endMarkers = [];
+
+// let beginMarkers = {
+//     "U": [],
+//     "0": [],
+//     "1": [],
+//     "2": [],
+//     "3": [],
+//     "4": [],
+//     "5": []
+// };
+
+// let endMarkers = {
+//     "U": [],
+//     "0": [],
+//     "1": [],
+//     "2": [],
+//     "3": [],
+//     "4": [],
+//     "5": []
+// };
+
 let beginLayerGroup = L.layerGroup();
 let endLayerGroup = L.layerGroup();
+var heatLayer;
 
-let overlays = {
-    "Begin Points": beginLayerGroup,
-    "End Points": endLayerGroup
-}
+let tornadoma = map;
+// let tornadoMap = L.map("map", {
+//     center: view.center,
+//     zoom: view.zoom,
+//     layers: [street]
+// });
 
-let tornadoMap = L.map("map", {
-    center: view.center,
-    zoom: view.zoom,
-    layers: [street, beginLayerGroup, endLayerGroup]
-});
-
-L.control.layers(baseMaps, null, {
+let mapLayerControl = L.control.layers(baseMaps, null, {
     collapsed: true
 }).addTo(tornadoMap);
 
 tornadoMap.on("zoomend", markersZoom);
-populateMap();
-
-// let tornadoURL = api_call;
-// let eventMapLayers = [];
-
+tornadoMap.on("overlayadd", markersZoom);
+tornadoMap.on("overlayremove", markersZoom);
+// populateMap();
 
 dashboardForm.addEventListener('submit', function (event) {
     
     // prevent page reload
     event.preventDefault();
 
-    // load dashboard
-    // refreshDashboard();    
+    // load map
     populateMap();
 });
 
@@ -81,8 +98,6 @@ function populateMap() {
         // alert('Please select BOTH start year and duration :)');
         return;
     }
-
-    // console.log("Populate Map");
 
     // build final dashboard url api call
     //required endpoints
@@ -101,18 +116,26 @@ function populateMap() {
 
     // final API URL
     const finalURL = `${eventMapURL}?${params.toString()}`;
-    // console.log('Dashboard URL:', finalURL);
-    console.log('Map URL: ', finalURL);
+    // console.log('Map URL: ', finalURL);
 
     d3.json(finalURL).then(response => {
+        // Reset map data
         beginMarkers.length = 0;
         endMarkers.length = 0;
+        tornadoMap.removeLayer(beginLayerGroup);
+        tornadoMap.removeLayer(endLayerGroup);
+        if (beginLayerGroup !== undefined) {
+            mapLayerControl.removeLayer(beginLayerGroup);
+            // tornadoMap.removeLayer(heatLayer);
+        }
+
+
         for (let i = 0; i < response.length; i++) {
             let tornado = response[i];
             if (tornado.BEGIN_LAT) {
                 let color = colorScale[tornado.TOR_F_LEVEL];
-                let begin_coordinates = [tornado.BEGIN_LAT, tornado.BEGIN_LON];                
-                let begin_marker = L.shapeMarker(begin_coordinates, {
+                let beginCoordinates = [tornado.BEGIN_LAT, tornado.BEGIN_LON];                
+                let beginMarker = L.shapeMarker(beginCoordinates, {
                     title: `${tornado.TOR_F_SCALE} Begin Point`,
                     zIndexOffset: 100,
                     shape: "triangle-down",
@@ -125,12 +148,12 @@ function populateMap() {
                     maxWidth: 650,
                     maxHeight: 400
                 });
-                beginMarkers.push(begin_marker);
+                beginMarkers.push(beginMarker);
     
                 if (tornado.END_LAT) {
-                    let end_coordinates = [tornado.END_LAT, tornado.END_LON];
-                    if (begin_coordinates != end_coordinates) {
-                        let end_marker = L.shapeMarker(end_coordinates, {
+                    let endCoordinates = [tornado.END_LAT, tornado.END_LON];
+                    if (beginCoordinates != endCoordinates) {
+                        let endMarker = L.shapeMarker(endCoordinates, {
                             title: `${tornado.TOR_F_SCALE} End Point`,
                             zIndexOffset: -100,
                             shape: "square",
@@ -143,14 +166,14 @@ function populateMap() {
                             maxWidth: 650,
                             maxHeight: 400
                         });
-                        endMarkers.push(end_marker);
+                        endMarkers.push(endMarker);
         
                         // Calculate size & frequency based on tornado length?
                         let pathMarkerFrequency = 10;
                         let pathMarkerSize = "10%";
         
                         // Path between BEGIN and END points
-                        let tornado_path = L.polyline([
+                        let tornadoPath = L.polyline([
                             [tornado.BEGIN_LAT, tornado.BEGIN_LON],
                             [tornado.END_LAT, tornado.END_LON]
                         ], {
@@ -165,73 +188,46 @@ function populateMap() {
                             fill: true,                        
                             fillColor: color
                         });
-                        endMarkers.push(tornado_path);
+                        endMarkers.push(tornadoPath);
                     }
                 }
             }
         }
-    
-        // let beginLayerGroup = L.layerGroup(beginMarkers);
-        // let endLayerGroup = L.layerGroup(endMarkers);
-    
-        // let overlays = {
-        //     "Begin Points": beginLayerGroup,
-        //     "End Points": endLayerGroup
-        // };
 
-        // Remove existing overlays
-        // eventMapLayers.array.forEach(element => {
-        //     tornadoMap.removeLayer(eventMapLayers.pop(element));
-        // });
 
-        // beginLayerGroup.clearLayers();
-        // endLayerGroup.clearLayers();
 
-        tornadoMap.removeLayer(beginLayerGroup);
-        tornadoMap.removeLayer(endLayerGroup);        
-
-        // beginLayerGroup.addLayer(beginMarkers);
         beginLayerGroup = L.layerGroup(beginMarkers);
-        // endLayerGroup.addLayer(endMarkers);
         endLayerGroup = L.layerGroup(endMarkers);
 
         tornadoMap.addLayer(beginLayerGroup);
         tornadoMap.addLayer(endLayerGroup);
 
+        mapLayerControl.addOverlay(beginLayerGroup, "Tornadoes");
+
         markersZoom();
-
-        // Add new overlays
-        // tornadoMap.addLayer(endLayerGroup);
-        // eventMapLayers.push(endLayerGroup);
-        // tornadoMap.addLayer(beginLayerGroup);
-        // eventMapLayers.push(beginLayerGroup);       
-
-        // L.control.layers(overlays, {
-        //     collapsed: true
-        // }).addTo(tornadoMap);
-    
-        // tornadoMap = L.map("map", {
-        //     center: view.center,
-        //     zoom: view.zoom,
-        //     layers: [street, beginLayerGroup]
-        // });
-
-        
+        createHeatMap(response);
     });
 }
 
-function markersZoom() {
-        // console.log(tornadoMap.getZoom());
-        // console.log(getMarkerSize(tornadoMap.getZoom(), true));
+function resetMarkers() {
+    for (let i = 0; i < EFscale.length; i++) {
+        let element = EFscale[i];
+        console.log(element);
+        beginMarkers[element].length = 0;
+        endMarkers[element].length = 0;
+    }
+ }
 
-        if (tornadoMap.getZoom() < view.endPointThreshold) {
+function markersZoom() {
+        if (tornadoMap.getZoom() < view.endPointThreshold || !tornadoMap.hasLayer(beginLayerGroup)) {
             if (tornadoMap.hasLayer(endLayerGroup))
                 tornadoMap.removeLayer(endLayerGroup);
         }
         else {
-            if (!tornadoMap.hasLayer(endLayerGroup))
+            if (!tornadoMap.hasLayer(endLayerGroup) && tornadoMap.hasLayer(beginLayerGroup))
                 tornadoMap.addLayer(endLayerGroup);
         }
+
         resizeMarkers();
 }
 
@@ -241,7 +237,7 @@ function resizeMarkers() {
     });
     for (let i = 0; i < endMarkers.length; i++) {
         let element = endMarkers[i];
-        if ((i % 2) == 0) {
+        if ((i % 2) === 0) {
             // This is a marker
             element.setRadius(getMarkerSize(tornadoMap.getZoom(), false));
         }
@@ -259,17 +255,16 @@ function getMarkerSize(currentZoom, isBegin) {
     return currentZoom * multiplier;
 }
 
-function createPopup(tornado, is_begin) {
+function createPopup(tornado, isBegin) {
     let text = "";
     let mileText = "mile";
 
-    if (is_begin) {
+    if (isBegin) {
         let timestamp = Number(tornado.BEGIN_TIMESTAMP)
         let beginDate = new Date(timestamp * 1000).toUTCString();
         text +=
         `<h2>${tornado.TOR_F_SCALE} Tornado (Begin Point)</h2>
         ${formatRAP(tornado.BEGIN_RANGE, tornado.BEGIN_AZIMUTH, tornado.BEGIN_LOCATION)}, ${tornado.STATE}
-        <br>Timestamp: ${timestamp}
         <br>${beginDate}`;
     }
     else {
@@ -281,17 +276,17 @@ function createPopup(tornado, is_begin) {
         <br>${endDate}`;
     }
 
-    lngth = Number.parseFloat(tornado.TOR_LENGTH).toPrecision(2)
-    if (lngth != 1)
+    let length = Number.parseFloat(tornado.TOR_LENGTH).toPrecision(2)
+    if (length !== 1)
         mileText += "s";
 
     text +=
-        `<hr>Length: ${lngth} ${mileText}
+        `<hr>Length: ${length} ${mileText}
         <br>Width: ${tornado.TOR_WIDTH} yards
         <hr>Deaths: ${tornado.DEATHS}
         <br>Injuries: ${tornado.INJURIES}
-        <br>Property Damage: $${tornado.DAMAGE_PROPERTY}
-        <br>Crop Damage: $${tornado.DAMAGE_CROPS}`
+        <br>Property Damage: $${tornado.DAMAGE_PROPERTY.toLocaleString()}
+        <br>Crop Damage: $${tornado.DAMAGE_CROPS.toLocaleString()}`
 
     if (tornado.EVENT_NARRATIVE) {
         text += `<hr>${tornado.EVENT_NARRATIVE}`;        
@@ -306,7 +301,7 @@ function formatRAP(range, azimuth, location) {
 
     if (location) {
         if (range) {
-            if (range != 1)
+            if (range !== 1)
                 mileText += "s";
             text += `${range} ${mileText} `;
         }
@@ -320,6 +315,26 @@ function formatRAP(range, azimuth, location) {
         return text;
     }
     else {
-        return `Unknown Location`;
+        return `Unknown Relative Location`;
     }
+}
+
+function createHeatMap(data) {
+    if (heatLayer !== undefined) {
+        mapLayerControl.removeLayer(heatLayer);
+        tornadoMap.removeLayer(heatLayer);
+    }
+    let heatData = data.map(entry => [
+        parseFloat(entry.BEGIN_LAT),
+        parseFloat(entry.BEGIN_LON),       
+    ]);
+
+    heatLayer = L.heatLayer(heatData, {
+        radius: 10,
+        blur: 15,    
+        maxZoom: 7,
+        gradient: {0.4: 'blue', 0.65: 'lime', 1: 'red'}
+    }) //.addTo(tornadoMap);
+    
+    mapLayerControl.addOverlay(heatLayer, "Heat Map");
 }
