@@ -309,8 +309,10 @@ function buildCountyHeatmap(countyHeatMapData) {
             let count = lookup[fip] || 0; //get 0 if not found
             return {
                 fillColor: getCountyHeatmapColor(count),
-                color: '#999',
-                weight: 1,
+                //color: '#999',
+                color: '#FFFFFF',
+                //weight: 1,
+                weight: 0.7,
                 fillOpacity: 0.7
             };
         },
@@ -341,7 +343,8 @@ function getCountyHeatmapColor(count) {
     if (count > 5)  return "#E31A1C";
     if (count > 2)  return "#FC4E2A";
     if (count > 0)  return "#FD8D3C";
-    return "#EEEEE";
+    //return "#EEEEE";
+    return "#062A77";  //navy
 }
 
 /*****************************************
