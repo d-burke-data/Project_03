@@ -19,7 +19,7 @@ Comes with three overlay options:
     - ***Marker color:*** based on EF-scale
 - **Heatmap:** based on latitude and longitude begin points from each event
 
-**Ex) Zoomed in map with Events layer over Counties layer:** clearly shows tornado events crossing county borders and even changing EF-scale ranking:
+**EXAMPLE Zoomed in map with Events layer over Counties layer:** clearly shows tornado events crossing county borders and even changing EF-scale ranking:
 ![image](https://github.com/user-attachments/assets/02200950-a656-460c-8a3d-50a89dc2b6fd)
 
 ### Plotly Charts
@@ -49,22 +49,33 @@ The Flask app API utilizes an ORM, SQLAlchemy, to interact with the relational d
 - `/api/v1.0/counties`: counties table data (*populates Counties dropdown in web app*)
 - `/api/v1.0/scales`: scales table data (*populates EF-Scale dropdown in web app*)
 
-**Ex) Dashboard route vs Events route:** both are using the same endpoints but we can see here (in the console of the web app) that the dashboard route produces the *aggregated data* needed for the tables/charts and county heatmap. Meanwhile, the events route produces the *individual records* to be able to capture data for each event such as lat/lon for the events and heatmap overlays.
+**EXAMPLE Dashboard route vs Events route:** both are using the same endpoints but we can see here (in the console of the web app) that the dashboard route produces the *aggregated data* needed for the tables/charts and county heatmap. Meanwhile, the events route produces the *individual records* to be able to capture data for each event such as lat/lon for the events and heatmap overlays.
 ![image](https://github.com/user-attachments/assets/fca85df8-cad2-4477-8adb-017d806bd68d)
 
-## Repo Layout
-- API
-- Cleaning
-- Data
-    - Database 
-- docs
+## Repository Directory
+|Folder|Subfolder|Contents|
+|---|---|---|
+|API||Python Flask app<sup>1</sup>|
+|Cleaning||Python Jupter Notebooks used to clean data before database import. *data_cleaning.ipnyb* is the file for cleaning tornado event CSV files (primary data)|
+|Data|Input|Raw data|
+||Input/Events|Select sample event details files. Full set of raw files can be acquired from [NOAA bulk download](https://www.ncdc.noaa.gov/stormevents/ftp.jsp)<sup>2</sup>|
+||Input/UpdatedEvents|Manually updated events files<sup>2</sup>|
+||Output|Output of Jupyter Notebooks|
+|Database||SQLite database<sup>1</sup> and schema|
+|docs||Web folder for GitHub Pages. *Index.html* is located here|
+||static/js|JavaScript files used in the web app. *app.js* is original JavaScript. Other files are plugins from other sources.|
+||static/js/data|Counties FIPS GeoJSON data file for county choropleth map layer|
+|Work||Preliminary work and testing. **This folder can be safely ignored.**|
+
+**<sup>1</sup>** Flask app and SQLite database are presented here for completion, but are hosted at PythonAnywhere for the live dashboard.
+
+**<sup>2</sup>** FIPS data was manually updated in some event details files. If you are downloading the entire dataset from NOAA bulk download, use these files in place of their corresponding originals.
 
 ## Plugins & Libraries
 **Python:** Pandas, SQLite3, SQLAlchemy, Flask, NumPy, Os
 
 Web App (**JavaScript & HTML**):
 - **Leaflet**: [https://leafletjs.com/](https://leafletjs.com/)
-    - Choropleth: https://github.com/timwis/leaflet-choropleth 
     - Leaflet.heat: https://github.com/Leaflet/Leaflet.heat
     - GeometryUtil: https://github.com/makinacorpus/Leaflet.GeometryUtil
     - Arrowheads: https://github.com/slutske22/leaflet-arrowheads
@@ -75,8 +86,8 @@ Web App (**JavaScript & HTML**):
 
 ## Data Sources
 - **Storm Event Data**: [NOAA Storm Events Database](https://www.ncdc.noaa.gov/stormevents/)
-- **GeoJson Counties Fips**: [Plotly datasets](https://github.com/plotly/datasets/blob/master/geojson-counties-fips.json)
-- **Census County Fips**: [Census Codes for Counties & County Equivalent Entities](https://www.census.gov/library/reference/code-lists/ansi.html)
+- **GeoJson Counties FIPS**: [Plotly datasets](https://github.com/plotly/datasets/blob/master/geojson-counties-fips.json)
+- **Census County FIPS**: [Census Codes for Counties & County Equivalent Entities](https://www.census.gov/library/reference/code-lists/ansi.html)
 
 ## Ethicial Consideration  
 This project has no ethical concerns since it is based on a publicly available dataset, ensuring transparency and accessibility of the data used. As the dataset is open to public use and does not contain personally identifiable or sensitive information, no ethical concerns were identified in its application.
