@@ -51,7 +51,7 @@ The Flask app API utilizes an ORM, SQLAlchemy, to interact with the relational d
 - `/api/v1.0/scales`: scales table data (*populates EF-Scale dropdown in web app*)
 
 **EXAMPLE**  
-**Dashboard route vs Events route:** Both are using the same endpoints but we can see here (in the console of the web app) that the dashboard route produces the *aggregated data* needed for the tables/charts and county heatmap. Meanwhile, the events route produces the *individual records* to be able to capture data for each event such as lat/lon for the events and heatmap overlays.
+**Dashboard route vs Events route:** Both are using the same endpoints but we can see here (in the console of the web app) that the dashboard route produces *aggregated data*; meanwhile, the events route produces the *individual records*.
 ![image](https://github.com/user-attachments/assets/fca85df8-cad2-4477-8adb-017d806bd68d)
 
 ## Repository Directory
